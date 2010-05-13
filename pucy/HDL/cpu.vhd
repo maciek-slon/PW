@@ -11,13 +11,15 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 
 entity booth_multiply is
-generic (n : positive := 8);
-port ( M, R: in std_logic_vector (n - 1 downto 0); --liczby do pomnozenia
-		WYN: out std_logic_vector (2*n - 1 downto 0); --wynik mnozenia
-		MUL_WT : out std_ulogic; -- sygna³ trwania przetwarzania
-		MUL_GEN: in std_ulogic;-- sygna³ zegarowy
-		MUL_CR : in std_ulogic; -- sygna³ reset  
-		MUL : in std_ulogic);
+	generic (n : positive := 8);
+	port ( 
+		M, R	: in std_logic_vector (n - 1 downto 0); --liczby do pomnozenia
+		WYN		: out std_logic_vector (2*n - 1 downto 0); --wynik mnozenia
+		MUL_WT 	: out std_ulogic; -- sygna³ trwania przetwarzania
+		MUL_GEN	: in std_ulogic;-- sygna³ zegarowy
+		MUL_CR 	: in std_ulogic; -- sygna³ reset  
+		MUL 	: in std_ulogic
+	);
 end entity booth_multiply;
 
 architecture booth_multiply_arch of booth_multiply is 
@@ -108,11 +110,13 @@ library lpm;
 use lpm.lpm_components.lpm_rom;
 
 entity rom is
-port (	R_GEN : in std_logic;
-		R_DATA : inout std_logic_vector (7 downto 0);
-		R_ADDR : in std_logic_vector (15 downto 0);
-		R_MREQ : in std_logic;
-		R_RD : in std_logic);
+	port (	
+		R_GEN 	: in std_logic;
+		R_DATA 	: inout std_logic_vector (7 downto 0);
+		R_ADDR 	: in std_logic_vector (15 downto 0);
+		R_MREQ 	: in std_logic;
+		R_RD 	: in std_logic
+	);
 end entity rom;
 
 architecture pamiec_ROM of rom is
@@ -140,12 +144,14 @@ library lpm;
 use lpm.lpm_components.lpm_ram_dp;
 
 entity ram is
-port (	RAM_GEN : in std_logic;
-		RAM_DATA : inout std_logic_vector (7 downto 0);
-		RAM_ADDR : in std_logic_vector (15 downto 0);
-		RAM_MREQ : in std_logic;
-		RAM_WR : in std_logic;
-		RAM_RD : in std_logic);
+	port (	
+		RAM_GEN 	: in std_logic;
+		RAM_DATA 	: inout std_logic_vector (7 downto 0);
+		RAM_ADDR 	: in std_logic_vector (15 downto 0);
+		RAM_MREQ 	: in std_logic;
+		RAM_WR 		: in std_logic;
+		RAM_RD		: in std_logic
+	);
 end entity ram;
 
 architecture pamiec_RAM of ram is
@@ -196,26 +202,29 @@ library lpm;
 use lpm.lpm_components.lpm_ram_dp;
 
 entity cpu is
-port (	CR : in std_logic;
-		GEN : in std_logic;
-		DATA : inout std_logic_vector (7 downto 0);
-		ADDR : buffer std_logic_vector (15 downto 0);
-		MREQ : buffer std_logic;
-		IOREQ : buffer std_logic;
-		RD : buffer std_logic;
-		WR : buffer std_logic;
-		WT : in std_logic;
-		OUT_DATA : out std_logic_vector(7 downto 0);
-		BUSY : iN STD_LOGIC;
-		ACK	: IN STD_LOGIC;
-		STROBE : OUT STD_LOGIC;
-		SELECTLN : OUT STD_LOGIC;
-		SEL	: IN STD_LOGIC;
-		INIT : OUT STD_LOGIC;
-		AUTOFD : OUT STD_LOGIC;
+	port (
+		CR 		: in std_logic;
+		GEN 	: in std_logic;
+		DATA 	: inout std_logic_vector (7 downto 0);
+		ADDR 	: buffer std_logic_vector (15 downto 0);
+		MREQ 	: buffer std_logic;
+		IOREQ 	: buffer std_logic;
+		RD 		: buffer std_logic;
+		WR 		: buffer std_logic;
+		WT 		: in std_logic;
+		
+		OUT_DATA: out std_logic_vector(7 downto 0);
+		BUSY 	: iN STD_LOGIC;
+		ACK		: IN STD_LOGIC;
+		STROBE 	: OUT STD_LOGIC;
+		SELECTLN: OUT STD_LOGIC;
+		SEL		: IN STD_LOGIC;
+		INIT 	: OUT STD_LOGIC;
+		AUTOFD 	: OUT STD_LOGIC;
 		
 		IN_DATA : in std_logic;
-		IN_CLK: in std_logic);		
+		IN_CLK	: in std_logic
+	);		
 end entity cpu;
 
 architecture cpu of cpu is
@@ -399,11 +408,33 @@ begin
 end function READ_IN;
 
 begin
-rom0: rom port map (R_GEN => GEN,   R_DATA => DATA,   R_ADDR => ADDR,   R_MREQ => MREQ,                 R_RD => RD);
 
-ram0: ram port map (RAM_GEN => GEN, RAM_DATA => DATA, RAM_ADDR => ADDR, RAM_MREQ => MREQ, RAM_WR => WR, RAM_RD => RD);
+rom0: rom port map (
+	R_GEN => GEN,
+	R_DATA => DATA,
+	R_ADDR => ADDR,
+	R_MREQ => MREQ,
+	R_RD => RD
+);
 
-mul0: booth_multiply port map (	M => TMP1, R => TMP2, WYN(7 downto 0) => M_WY, MUL_WT => M_WT, MUL_GEN => GEN, MUL_CR => CR, MUL => B_M);
+ram0: ram port map (
+	RAM_GEN => GEN, 
+	RAM_DATA => DATA, 
+	RAM_ADDR => ADDR, 
+	RAM_MREQ => MREQ, 
+	RAM_WR => WR, 
+	RAM_RD => RD
+);
+
+mul0: booth_multiply port map (	
+	M => TMP1,
+	R => TMP2, 
+	WYN(7 downto 0) => M_WY, 
+	MUL_WT => M_WT, 
+	MUL_GEN => GEN, 
+	MUL_CR => CR, 
+	MUL => B_M
+);
 
 lpt0: output_lpt port map (LPT_ADDR => ADDR(7 downto 0), LPT_DATA => DATA, LPT_IOREQ => IOREQ, LPT_RD => RD, LPT_WR => WR,
 						    LPT_GEN => GEN, LPT_CR => CR, LPT_OUT_DATA => OUT_DATA,  LPT_BUSY => BUSY,
@@ -608,7 +639,7 @@ p0:	process (GEN, CR) is
 								end if;
 							end if;
 						
-						when "01011" =>
+						when "01011" => --    Rd <= IN(A)
 							if(UNSIGNED(DELAY) < 3) then
 								TMP := READ_IN(IC2);
 								DELAY := UNSIGNED(DELAY) + 1;
