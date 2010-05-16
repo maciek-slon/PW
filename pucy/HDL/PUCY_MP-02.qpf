@@ -18,13 +18,13 @@
 #
 # Quartus II
 # Version 9.0 Build 235 06/17/2009 Service Pack 2 SJ Web Edition
-# Date created = 22:45:33  May 09, 2010
+# Date created = 13:10:34  May 16, 2010
 #
 # -------------------------------------------------------------------------- #
 
 QUARTUS_VERSION = "9.0"
-DATE = "22:45:33  May 09, 2010"
+DATE = "13:10:34  May 16, 2010"
 
 # Revisions
 
-PROJECT_REVISION = "cpu"
+PROJECT_REVISION = "PUCY_MP-02"
