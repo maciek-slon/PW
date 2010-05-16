@@ -13,7 +13,7 @@ subdesign output_lpt(
 	LPT_IOREQ : input;
 	LPT_RD : input;
 	LPT_WR : input;
-	LPT_WT : bidir;
+	LPT_WT : output;
 
 	LPT_OUT_DATA[7..0] : output;
 	LPT_BUSY : input;
@@ -30,7 +30,6 @@ variable
 	LPT_SELECTLN : DFF;
 	LPT_INIT : DFF;
 	LPT_AUTOFD : DFF;
-	LPT_WTFLAG : NODE;
 	
 	CNT[3..0] : DFF;
 	NUM[2..0] : DFF;
@@ -81,7 +80,6 @@ begin
 	LPT_AUTOFD   = GND;
 	LPT_INIT     = GND;
 	
-	LPT_WT = TRI(LPT_WTFLAG, !(LPT_WR or LPT_IOREQ));
 
 	BCD_MOD.GEN = LPT_GEN;
 
@@ -90,7 +88,7 @@ begin
 		when S0 =>	CNT[] = 0; LPT_OUT_DATA[] = 0; NUM[] = 0;
 					
 					if(!LPT_IOREQ & !LPT_WR & (LPT_ADDR[] == addr)) then
-						LPT_WTFLAG = VCC;
+						LPT_WT = VCC;
 						BCD_MOD.COUNT = VCC;						
 						BCD_MOD.DATA[] = LPT_DATA[];
 						if(BCD_MOD.WT) then
@@ -103,12 +101,12 @@ begin
 							AUT = S1;
 						end if;
 					else
-						LPT_WTFLAG = GND;
+						LPT_WT = GND;
 						AUT = S0;
 					end if;
 		
 		
-		when s1	=>	LPT_STROBE = VCC; LPT_WTFLAG = VCC;
+		when s1	=>	LPT_STROBE = VCC; LPT_WT = VCC;
 					SIGN = SIGN; HUNDS[] = HUNDS[]; TENS[] = TENS[]; UNITS[] = UNITS[];			
 					case (NUM[]) is
 						when 0 	=> 	if(SIGN) then %drukuj znak liczby +/-%
@@ -147,7 +145,7 @@ begin
 									NUM[] = 6;
 					end case;
 		%Opuszczamy STROBE na 500 ns%
-		when S2	=>	LPT_OUT_DATA[] = LPT_OUT_DATA[]; NUM[] = NUM[]; LPT_WTFLAG = VCC;
+		when S2	=>	LPT_OUT_DATA[] = LPT_OUT_DATA[]; NUM[] = NUM[]; LPT_WT = VCC;
 					SIGN = SIGN; HUNDS[] = HUNDS[]; TENS[] = TENS[]; UNITS[] = UNITS[];		
 					LPT_STROBE = GND;				
 					CNT[] = CNT[] + 1; 
@@ -157,7 +155,7 @@ begin
 						AUT = S3;
 						CNT[] = 0;
 					end if;
-		when S3	=>	LPT_OUT_DATA[] = LPT_OUT_DATA[]; NUM[] = NUM[]; LPT_WTFLAG = VCC;
+		when S3	=>	LPT_OUT_DATA[] = LPT_OUT_DATA[]; NUM[] = NUM[]; LPT_WT = VCC;
 					SIGN = SIGN; HUNDS[] = HUNDS[]; TENS[] = TENS[]; UNITS[] = UNITS[];		
 					LPT_STROBE = GND;
 			
@@ -167,7 +165,7 @@ begin
 						AUT = S4;
 					end if;
 		%Drukarka zakoñczy³¹ przetwarzanie%
-		when S4	=>	LPT_OUT_DATA[] = LPT_OUT_DATA[]; NUM[] = NUM[]; LPT_WTFLAG = VCC;
+		when S4	=>	LPT_OUT_DATA[] = LPT_OUT_DATA[]; NUM[] = NUM[]; LPT_WT = VCC;
 					SIGN = SIGN; HUNDS[] = HUNDS[]; TENS[] = TENS[]; UNITS[] = UNITS[];		
 					LPT_STROBE = VCC;
 					CNT[] = 0;
@@ -184,15 +182,15 @@ begin
 					
 					if (LPT_ACK) then 
 						if(NUM[] == 6)then
-							LPT_WTFLAG = GND;
+							LPT_WT = GND;
 							AUT = S0;							
 						else
-							LPT_WTFLAG = VCC;
+							LPT_WT = VCC;
 							AUT = S1;
 						end if;
 							
 					else 
-						LPT_WTFLAG = VCC;
+						LPT_WT = VCC;
 						AUT = S5;
 					end if;
 	end case;
