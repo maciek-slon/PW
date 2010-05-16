@@ -1,198 +1,4 @@
 -------------------------------------
--- MNOZARKA
--------------------------------------
--- Ÿród³o:
---   http://en.wikipedia.org/wiki/Booth's_multiplication_algorithm
--------------------------------------
-
-library ieee;
-
-use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
-
-entity booth_multiply is
-
-	generic (n : positive := 8);
-
-	port ( 
-		M, R	: in std_logic_vector (n - 1 downto 0); --liczby do pomnozenia
-		WYN		: out std_logic_vector (2*n - 1 downto 0); --wynik mnozenia
-		MUL_WT 	: out std_ulogic; -- sygna³ trwania przetwarzania
-		MUL_GEN	: in std_ulogic; -- sygna³ zegarowy
-		MUL_CR 	: in std_ulogic; -- sygna³ reset  
-		MUL 	: in std_ulogic
-	);
-end entity booth_multiply;
-
-architecture booth_multiply_arch of booth_multiply is 
-shared variable A, S, P : std_logic_vector(2*n downto 0); -- d³ugoœæ 2n+1
-shared variable Z1 : std_logic_vector(n downto 0);
-shared variable Z2 : std_logic_vector(n-1 downto 0);
-shared variable MM : std_logic_vector(n-1 downto 0);
-shared variable CNT : integer range 0 to 31;
-type stany is (ST0, ST1, ST2, ST3, ST4);
-
-shared variable STAN : stany;
-
-begin
-	p0 : process (MUL_GEN, MUL_CR, M, R, MUL) is
-		begin
-		
-		if(MUL_CR = '0') then
-			STAN := ST0;
-			MUL_WT <= '0';
-			WYN <= (others => '0');
-			Z1 := (others => '0');
-			Z2 := (others => '0');
-		else 
-			if rising_edge(MUL_GEN) then
-				case (STAN) is
-					when ST0 =>
-						WYN <= (others => '0');
-						if (MUL = '1') then
-							MUL_WT <= '1';
-							STAN := ST1;
-							MM := not M;
-							MM := UNSIGNED(MM) + 1;
-							A := (M & Z1);
-							S := (MM & Z1);
-							P := (Z2 & R & '0');
-							CNT := 0;
-						else 
-							MUL_WT <= '0';
-							STAN := ST0;
-						end if;
-					when ST1 => 
-						MUL_WT <= '1';
-						if (P(1 downto 0) = "01") then
-							P := UNSIGNED(P) + UNSIGNED(A);
-						elsif (P(1 downto 0) = "10") then
-							P := UNSIGNED(P) + UNSIGNED(S);
-						end if;
-						STAN := ST2;
-					when ST2 => 
-						MUL_WT <= '1';
-						if (CNT < n) then
-							STAN := ST1;
-							P := (P(2*n) & P(2*n downto 1));
-							CNT := CNT + 1;
-						else
-							STAN := ST3;
-							CNT := 0;
-						end if;
-					when ST3 => 
-						MUL_WT <= '0';
-						if (MUL = '1') then
-							WYN <= P(2*n downto 1);
-							STAN := ST3;
-						else
-							WYN <= (others => '0');
-							STAN := ST0;
-						end if;
-					when others => 
-						MUL_WT <= '0';
-				end case;
-			end if;					
-		end if;		
-				
-	end process p0;
-
-end architecture booth_multiply_arch;
-
-
-
--------------------------------------
--- ROM
--------------------------------------
-
-library ieee;
-use ieee.std_logic_1164.all;
-
-library lpm;
-use lpm.lpm_components.lpm_rom;
-
-entity rom is
-	port (	
-		R_GEN 	: in std_logic;
-		R_DATA 	: inout std_logic_vector (7 downto 0);
-		R_ADDR 	: in std_logic_vector (15 downto 0);
-		R_MREQ 	: in std_logic;
-		R_RD 	: in std_logic
-	);
-end entity rom;
-
-architecture pamiec_ROM of rom is
-shared variable DOUT : std_logic_vector (7 downto 0);
-shared variable ADR : std_logic_vector (4 downto 0);
-
-begin
-
-e0: lpm_rom
-	generic map(LPM_WIDTH => 8, LPM_WIDTHAD => 5, LPM_NUMWORDS => 32,
-				LPM_FILE=>"none.mif",
-				LPM_OUTDATA => "UNREGISTERED",
-				LPM_ADDRESS_CONTROL => "UNREGISTERED", LPM_HINT=>"UNUSED")
-	port map (	address => R_ADDR(4 downto 0), q => R_DATA, memenab=> (not R_RD) and R_ADDR(5));
-
-end architecture pamiec_ROM;
-
--------------------------------------
--- RAM
--------------------------------------
-
-library ieee;
-use ieee.std_logic_1164.all;
-library lpm;
-use lpm.lpm_components.lpm_ram_dp;
-
-entity ram is
-	port (	
-		RAM_GEN 	: in std_logic;
-		RAM_DATA 	: inout std_logic_vector (7 downto 0);
-		RAM_ADDR 	: in std_logic_vector (15 downto 0);
-		RAM_MREQ 	: in std_logic;
-		RAM_WR 		: in std_logic;
-		RAM_RD 		: in std_logic
-	);
-end entity ram;
-
-architecture pamiec_RAM of ram is
-shared variable DIN : std_logic_vector (7 downto 0);
-shared variable DOUT : std_logic_vector (7 downto 0);
-shared variable ADR : std_logic_vector (4 downto 0);
-
-begin
---e0: lpm_ram_dq
---	generic map(LPM_WIDTH => 8, LPM_WIDTHAD => 5, LPM_NUMWORDS => 32,
---				LPM_INDATA => "UNREGISTERED", LPM_OUTDATA => "UNREGISTERED",
---				LPM_ADDRESS_CONTROL => "UNREGISTERED")
---	port map (	data => DIN, address => ADR, we => not RAM_WR, q => DOUT);
-	
-f0: lpm_ram_dp
-		generic map (LPM_WIDTH => 8, LPM_WIDTHAD => 5, LPM_NUMWORDS => 32,
-				LPM_INDATA => "REGISTERED", LPM_OUTDATA => "UNREGISTERED",
-				LPM_RDADDRESS_CONTROL => "UNREGISTERED",
-				LPM_WRADDRESS_CONTROL => "REGISTERED")
-		port map (	rdaddress => ADR, q => DOUT,
-					wraddress => ADR, data => DIN, wren => not RAM_WR, wrclken => '1', wrclock => RAM_GEN);	
-
-p0:	process (RAM_GEN, RAM_MREQ, RAM_ADDR) is
-	begin
-		if rising_edge(RAM_GEN) and RAM_MREQ = '0' and RAM_ADDR(15 downto 5) = "00000000000" then --za³o¿enie, ¿e RAM jest pod adresami od 0 do 1F
-			ADR := RAM_ADDR(4 downto 0);
-			if RAM_RD = '0' then 
-				RAM_DATA <= DOUT; 
-			elsif RAM_WR = '0' then 
-				DIN := RAM_DATA;
-			else
-				RAM_DATA <= (others => 'Z');
-			end if;
-		end if;
-	end process p0;
-end architecture pamiec_RAM;
-	
-
--------------------------------------
 -- CPU module
 -------------------------------------
 
@@ -203,23 +9,19 @@ use ieee.std_logic_arith.all;
 library lpm;
 use lpm.lpm_components.lpm_ram_dp;
 
-entity core_cpu is
-	port (	
-		CPU_CR		: in std_logic;
-		CPU_GEN 	: in std_logic;
-		CPU_DATA	: inout std_logic_vector (7 downto 0);
-		CPU_ADDR 	: buffer std_logic_vector (15 downto 0);
-		CPU_MREQ 	: buffer std_logic;
-		CPU_IOREQ 	: buffer std_logic;
-		CPU_RD 		: buffer std_logic;
-		CPU_WR 		: buffer std_logic;
-		CPU_WT 		: inout std_logic
-	);
-end entity core_cpu;
+entity cpu is
+port (	CPU_CR : in std_logic;
+		CPU_GEN : in std_logic;
+		CPU_DATA : inout std_logic_vector (7 downto 0);
+		CPU_ADDR : buffer std_logic_vector (15 downto 0);
+		CPU_MREQ : buffer std_logic;
+		CPU_IOREQ : buffer std_logic;
+		CPU_RD : buffer std_logic;
+		CPU_WR : buffer std_logic;
+		CPU_WT : in std_logic);
+end entity cpu;
 
-architecture core_cpu of core_cpu is
-
-
+architecture cpu of cpu is
 COMPONENT booth_multiply is
 	GENERIC ( n : INTEGER := 8 );
 	PORT
@@ -237,7 +39,7 @@ END COMPONENT booth_multiply;
 type stany is (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST_WAIT);
 shared variable STAN : stany;
 
--- sterowanie pamiêci¹ rejestrów
+-- sterowanie pami?ci? rejestr?w
 shared variable REG_A : std_logic_vector (2 downto 0);
 shared variable REG_D : std_logic_vector (2 downto 0);
 shared variable D_A : std_logic_vector (7 downto 0);
@@ -256,12 +58,18 @@ shared variable TMP2 : std_logic_vector (7 downto 0);
 
 shared variable TMP : std_logic;
 
+-- OUT_LPT
+shared variable OUT_WT: std_logic;
+
+-- IN_PS2
+shared variable IN_WT: std_logic;
+
 -- mnozarka
 shared variable B_M : std_logic;
 shared variable M_WT : std_logic;
 shared variable M_WY : std_logic_vector (7 downto 0);
 
--- flaga ustawiana po instrukcji STOP, zawiesza dzia³anie procesora
+-- flaga ustawiana po instrukcji STOP, zawiesza dzia?anie procesora
 shared variable STOP : std_logic;
 
 -- program counter
@@ -330,8 +138,7 @@ begin
 end function READ_IN;
 
 begin
-
-mul0: booth_multiply port map (	M => TMP1, R => TMP2, WYN(7 downto 0) => M_WY, MUL_WT => M_WT, MUL_GEN => CPU_GEN, MUL_CR => CPU_CR, MUL => B_M);							
+mul0: booth_multiply port map (	M => TMP1, R => TMP2, WYN(7 downto 0) => M_WY, MUL_WT => M_WT, MUL_GEN => CPU_GEN, MUL_CR => CPU_CR, MUL => B_M);
 
 regA: lpm_ram_dp
 		generic map (LPM_WIDTH => 8, LPM_WIDTHAD => 3, LPM_NUMWORDS => 8,
@@ -345,7 +152,7 @@ regA: lpm_ram_dp
 p0:	process (CPU_GEN, CPU_CR) is
 	begin
 		if(CPU_CR = '0') then
-			PC := 32; -- pocz¹tek adresów pamiêci ROM
+			PC := 32; -- pocz?tek adres?w pami?ci ROM
 			CNT := "00";
 			CPU_DATA <= (others => 'Z');
 			CPU_RD <= '1';
@@ -358,7 +165,7 @@ p0:	process (CPU_GEN, CPU_CR) is
 			
 			case STAN is
 			
-				when ST0 => --jeœli PC < od 32 (max pamieci), odczyt instrukcji z ROM
+				when ST0 => --je?li PC < od 32 (max pamieci), odczyt instrukcji z ROM
 					IF (STOP = '1') THEN
 						STAN := ST0;
 					ELSE
@@ -382,7 +189,7 @@ p0:	process (CPU_GEN, CPU_CR) is
 						DELAY := "000";
 					END IF;
 					
-				when ST2 => -- wstêpne pobranie instrukcji i operandów
+				when ST2 => -- wst?pne pobranie instrukcji i operand?w
 					case CNT is
 						when "00" => 
 							IC1 := CPU_DATA; 
@@ -491,7 +298,7 @@ p0:	process (CPU_GEN, CPU_CR) is
 							PC := PC + 3;
 							STAN := ST_WAIT;
 						
-						when "10100" => -- OK Rd <= Ra * Rb
+						when "10100" => --    Rd <= Ra * Rb
 							TMP := M_WT;
 							if(UNSIGNED(DELAY) < 3) then
 								B_M := '1';
@@ -512,7 +319,7 @@ p0:	process (CPU_GEN, CPU_CR) is
 								end if;
 							end if;
 						
-						when "01100" => --    Rd => OUT(A)
+						when "01100" => -- Rd => OUT(A)
 							if(UNSIGNED(DELAY) < 3) then
 								CPU_DATA <= TMP0;
 								TMP := WRITE_OUT(IC2);
@@ -534,6 +341,7 @@ p0:	process (CPU_GEN, CPU_CR) is
 							else
 								if(CPU_WT = '1') then
 									STAN := ST3;
+									
 								else
 									TMP := WRITE_REG(IC1(2 downto 0), CPU_DATA);
 									PC := PC + 2;
@@ -557,147 +365,4 @@ p0:	process (CPU_GEN, CPU_CR) is
 		
 	end process p0;
 	
-end architecture core_cpu;
-
--------------------------------------
--- Main module
--------------------------------------
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
-
-entity cpu is
-	port (	
-		-- system bus signals
-		CR 			: in std_logic;
-		GEN 		: in std_logic;
-		DATA 		: inout std_logic_vector (7 downto 0);
-		ADDR 		: buffer std_logic_vector (15 downto 0);
-		MREQ 		: buffer std_logic;
-		IOREQ 		: buffer std_logic;
-		RD 			: buffer std_logic;
-		WR 			: buffer std_logic;
-		WT 			: inout std_logic;
-		
-		-- lpt signals
-		OUT_DATA 	: out std_logic_vector(7 downto 0);
-		BUSY 		: iN STD_LOGIC;
-		ACK			: IN STD_LOGIC;
-		STROBE 		: OUT STD_LOGIC;
-		SELECTLN 	: OUT STD_LOGIC;
-		SEL			: IN STD_LOGIC;
-		INIT 		: OUT STD_LOGIC;
-		AUTOFD 		: OUT STD_LOGIC;
-		
-		-- ps/2 signals
-		IN_DATA 	: in std_logic;
-		IN_CLK		: in std_logic
-	);		
-end entity cpu;
-
-architecture cpu of cpu is
-
-COMPONENT output_lpt is
-	PORT
-	(
-		LPT_GEN			:	 IN STD_LOGIC;
-		LPT_CR			:	 IN STD_LOGIC;
-
-		LPT_ADDR		:	 IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-		LPT_DATA		:	 IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-		LPT_IOREQ		:	 IN STD_LOGIC;
-		LPT_RD			:	 IN STD_LOGIC;
-		LPT_WR			:	 IN STD_LOGIC;
-		LPT_WT			:	 INOUT STD_LOGIC;
-
-		LPT_OUT_DATA	:	 OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-		LPT_BUSY		:	 IN STD_LOGIC;
-		LPT_ACK			:	 IN STD_LOGIC;
-		LPT_STROBE		:	 OUT STD_LOGIC;
-		LPT_SELECTLN	:	 OUT STD_LOGIC;
-		LPT_SEL			:	 IN STD_LOGIC;
-		LPT_INIT		:	 OUT STD_LOGIC;
-		LPT_AUTOFD		:	 OUT STD_LOGIC
-	);
-END COMPONENT output_lpt;
-
-COMPONENT input_ps2 is
-	PORT
-	(
-		PS2_DATA	:	 INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-		PS2_GEN		:	 IN STD_LOGIC;
-		PS2_CR		:	 IN STD_LOGIC;
-		PS2_ADDR	:	 IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-		PS2_IOREQ	:	 IN STD_LOGIC;
-		PS2_RD		:	 IN STD_LOGIC;
-		PS2_WR		:	 IN STD_LOGIC;
-		PS2_WT		:	 INOUT STD_LOGIC;
-		PS2_IN_DATA	:	 IN STD_LOGIC;
-		PS2_IN_CLK	:	 IN STD_LOGIC
-	);
-END COMPONENT input_ps2;
-
-
-COMPONENT rom is
-	PORT
-	(
-		R_GEN		:	 IN STD_LOGIC;
-		R_DATA		:	 INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-		R_ADDR		:	 IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-		R_MREQ		:	 IN STD_LOGIC;
-		R_RD		:	 IN STD_LOGIC
-	);
-END COMPONENT rom;
-
-COMPONENT ram is
-	PORT
-	(
-		RAM_GEN		:	 IN STD_LOGIC;
-		RAM_DATA	:	 INOUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-		RAM_ADDR	:	 IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-		RAM_MREQ	:	 IN STD_LOGIC;
-		RAM_WR		:	 IN STD_LOGIC;
-		RAM_RD		:	 IN STD_LOGIC
-	);
-END COMPONENT ram;
-
-COMPONENT core_cpu is
-	PORT
-	(
-		CPU_CR 		: in std_logic;
-		CPU_GEN 	: in std_logic;
-		CPU_DATA 	: inout std_logic_vector (7 downto 0);
-		CPU_ADDR 	: buffer std_logic_vector (15 downto 0);
-		CPU_MREQ 	: buffer std_logic;
-		CPU_IOREQ 	: buffer std_logic;
-		CPU_RD 		: buffer std_logic;
-		CPU_WR 		: buffer std_logic;
-		CPU_WT 		: inout std_logic
-	);
-END COMPONENT core_cpu;
-
-signal c_data : std_logic_vector(7 downto 0);
-signal c_addr : std_logic_vector(15 downto 0);
-signal c_mreq, c_ioreq, c_rd, c_wr, c_wt : std_logic;
-
-begin
-
---cpu0: core_cpu port map (CPU_CR => CR, CPU_GEN => GEN, CPU_DATA => DATA, CPU_ADDR => ADDR, CPU_MREQ => MREQ, CPU_IOREQ => IOREQ, CPU_RD => RD, CPU_WR => WR, CPU_WT => WT);	
-cpu0: core_cpu port map (CR, GEN, c_data, c_addr, c_mreq, c_ioreq, c_rd, c_wr, c_wt);	
-
-rom0: rom port map (R_GEN => GEN,   R_DATA => c_data,   R_ADDR => c_addr,   R_MREQ => c_mreq, R_RD => c_rd);
-
-ram0: ram port map (RAM_GEN => GEN, RAM_DATA => DATA, RAM_ADDR => ADDR, RAM_MREQ => MREQ, RAM_WR => WR, RAM_RD => RD);
-
-lpt0: output_lpt port map (LPT_ADDR => ADDR(7 downto 0), LPT_DATA => DATA, LPT_IOREQ => IOREQ, LPT_RD => RD, LPT_WR => WR,
-						    LPT_GEN => GEN, LPT_CR => CR, LPT_OUT_DATA => OUT_DATA,  LPT_BUSY => BUSY,
-							LPT_ACK => ACK, LPT_STROBE => STROBE, LPT_SELECTLN => SELECTLN,  LPT_SEL => SEL, 
-							LPT_INIT => INIT, LPT_AUTOFD => AUTOFD, LPT_WT => WT);
-
---ps20: input_ps2 port map (	PS2_DATA => DATA, PS2_GEN => GEN, PS2_CR => CR, PS2_ADDR => ADDR(7 downto 0),
---							PS2_IOREQ => IOREQ, PS2_RD => RD, PS2_WR => WR, PS2_WT => WT, PS2_IN_DATA => IN_DATA, PS2_IN_CLK => IN_CLK);
-
-
-						
-END ARCHITECTURE cpu;
+end architecture cpu;
