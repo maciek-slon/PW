@@ -157,9 +157,13 @@ std::string uppercase(std::string s) {
 	return s;
 }
 
-std::string strip(std::string line) {
-	int f = line.find_first_not_of(" \t");
-	int l = line.find_last_not_of(" \t");
+std::string strip(const std::string & line) {
+	int f = line.find_first_not_of(" \t\r\n");
+	int l = line.find_last_not_of(" \t\r\n");
+	//std::cout << f << "." << l << std::endl;
+	if (f >= l)
+		return "";
+
 	return line.substr(f, l-f+1);
 }
 
@@ -327,23 +331,54 @@ void assembly(const char * fname) {
 	int wrd = 0;
 	std::vector<std::string> tokens;
 	std::vector<std::string> codes;
+	bool first = true;
 
 	if (!f.good()) {
 		throw "No such file";
 	}
 
 	try {
-		std::cout << "WIDTH = 8;\n"
-					 "DEPTH = 32;\n"
-					 "ADDRESS_RADIX = DEC;\n"
-					 "DATA_RADIX = BIN;\n"
-					 "\n"
-					 "CONTENT BEGIN\n";
-
 		while(!f.eof()) {
 			cnt++;
 			tokens.clear();
 			getline(f, line);
+			//std::cout << "[" << line << "]\n";
+			line = strip(line);
+			//std::cout << "[" << line << "]\n";
+
+			if (line.length() < 1) {
+				if (first) {
+					std::cout << "WIDTH = 8;\n"
+								 "DEPTH = 32;\n"
+								 "ADDRESS_RADIX = DEC;\n"
+								 "DATA_RADIX = BIN;\n"
+								 "\n"
+								 "CONTENT BEGIN\n";
+
+					first = false;
+				}
+				continue;
+			}
+
+			// comment
+			if (line[0] == ';') {
+				line[0] = '-';
+				line = "-" + line;
+				std::cout << line << std::endl;
+				continue;
+			}
+
+			if (first) {
+				std::cout << "WIDTH = 8;\n"
+							 "DEPTH = 32;\n"
+							 "ADDRESS_RADIX = DEC;\n"
+							 "DATA_RADIX = BIN;\n"
+							 "\n"
+							 "CONTENT BEGIN\n";
+
+				first = false;
+			}
+
 			Tokenizer s(line, " \t,");
 			while (s.NextToken()) {
 				tokens.push_back(s.GetToken());
