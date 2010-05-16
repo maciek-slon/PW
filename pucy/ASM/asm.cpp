@@ -87,6 +87,7 @@ struct Instruction {
 };
 
 std::map <std::string, Instruction> lang;
+std::map <std::string, std::string> defs;
 
 int str2int (const string &str) {
 	stringstream ss(str);
@@ -98,23 +99,50 @@ int str2int (const string &str) {
 	return n;
 }
 
+std::string int2bin8(int n) {
+	std::string s;
+	for (int i = 0; i < 8; ++i) {
+		if (n & 1)
+			s = "1" + s;
+		else
+			s = "0" + s;
+
+		n >>= 1;
+	}
+
+	return s;
+}
+
 std::string str2bin8(const std::string & str) {
 	int n = str2int(str);
 	if ( (n > 127) || (n < -128) ) {
 		throw str + ": out of range (should be [-128..127])";
 	}
 
+	return int2bin8(n);
+}
+
+std::string int2bin16(int n) {
 	std::string s;
-	for (int i = 0; i < 8; ++i) {
-		if (i & 1)
+	for (int i = 0; i < 16; ++i) {
+		if (n & 1)
 			s = "1" + s;
 		else
 			s = "0" + s;
 
-		n >> 1;
+		n >>= 1;
 	}
 
 	return s;
+}
+
+std::string str2bin16(const std::string & str) {
+	int n = str2int(str);
+	if ( (n > 32767) || (n < -32768) ) {
+		throw str + ": out of range (should be [-32768..32767])";
+	}
+
+	return int2bin16(n);
 }
 
 struct upper {
@@ -154,6 +182,14 @@ void loadLanguageDesc(const char * fname = NULL) {
 		f >> ins.opcode >> ins.mnemo >> ins.length >> ins.type;
 		lang[ins.mnemo] = ins;
 	}
+
+	f >> cnt;
+
+	string s1, s2;
+	for (int i = 0; i < cnt; ++i) {
+		f >> s1 >> s2;
+		defs[s1] = s2;
+	}
 }
 
 std::vector<std::string> type0(Instruction ins, std::vector<std::string> tokens) {
@@ -182,6 +218,64 @@ std::vector<std::string> type1(Instruction ins, std::vector<std::string> tokens)
 	return ret;
 }
 
+std::vector<std::string> type2(Instruction ins, std::vector<std::string> tokens) {
+	if (tokens.size() != 3)
+		throw tokens[0] + " should have two arguments";
+
+	if (defs.count(tokens[1]) < 1)
+		throw tokens[1] + " unknown. Should be register name R0..R7";
+
+	std::vector<std::string> ret;
+	std::string s;
+	s = ins.opcode;
+	s += defs[tokens[1]];
+	ret.push_back(s);
+	s = str2bin8(tokens[2]);
+	ret.push_back(s);
+	return ret;
+}
+
+std::vector<std::string> type3(Instruction ins, std::vector<std::string> tokens) {
+	if (tokens.size() != 4)
+		throw tokens[0] + " should have three arguments";
+
+	if (defs.count(tokens[1]) < 1)
+		throw tokens[1] + " unknown. Should be register name R0..R7";
+
+	if (defs.count(tokens[2]) < 1)
+		throw tokens[2] + " unknown. Should be register name R0..R7";
+
+	if (defs.count(tokens[3]) < 1)
+		throw tokens[3] + " unknown. Should be register name R0..R7";
+
+	std::vector<std::string> ret;
+	std::string s;
+	s = ins.opcode;
+	s += defs[tokens[1]];
+	ret.push_back(s);
+	s = "0" + defs[tokens[2]] + "0" + defs[tokens[3]];
+	ret.push_back(s);
+	return ret;
+}
+
+std::vector<std::string> type4(Instruction ins, std::vector<std::string> tokens) {
+	if (tokens.size() != 3)
+		throw tokens[0] + " should have three arguments";
+
+	if (defs.count(tokens[1]) < 1)
+		throw tokens[1] + " unknown. Should be register name R0..R7";
+
+	std::vector<std::string> ret;
+	std::string s;
+	s = ins.opcode;
+	s += defs[tokens[1]];
+	ret.push_back(s);
+	s = str2bin16(tokens[2]);
+	ret.push_back(s.substr(0, 8));
+	ret.push_back(s.substr(8, 8));
+	return ret;
+}
+
 /*!
 	Assmebly given tokens into instruction.
 */
@@ -203,7 +297,7 @@ std::vector<std::string> assemblyLine(std::vector<std::string> tokens) {
 	ins = lang[mnemo];
 
 	for (size_t i = 0; i < tokens.size(); ++i) {
-		std::cout << "\t=: " << tokens[i] << " :=\n";
+		//std::cout << "\t-- " << tokens[i] << "\n";
 	}
 
 	switch (ins.type) {
@@ -212,11 +306,11 @@ std::vector<std::string> assemblyLine(std::vector<std::string> tokens) {
 		case 1:
 			return type1(ins, tokens);
 		case 2:
-//			return type2(ins, tokens);
+			return type2(ins, tokens);
 		case 3:
-			//return type3(ins, tokens);
+			return type3(ins, tokens);
 		case 4:
-			//return type4(ins, tokens);
+			return type4(ins, tokens);
 			break;
 	}
 
@@ -239,24 +333,32 @@ void assembly(const char * fname) {
 	}
 
 	try {
+		std::cout << "WIDTH = 8;\n"
+					 "DEPTH = 32;\n"
+					 "ADDRESS_RADIX = DEC;\n"
+					 "DATA_RADIX = BIN;\n"
+					 "\n"
+					 "CONTENT BEGIN\n";
 
 		while(!f.eof()) {
 			cnt++;
 			tokens.clear();
 			getline(f, line);
-			std::cout << cnt << ": [" << line << "]\n";
 			Tokenizer s(line, " \t,");
 			while (s.NextToken()) {
 				tokens.push_back(s.GetToken());
 			}
 			if (tokens.size()) {
+				std::cout << "-- " << cnt << ": " << line << "\n";
 				codes = assemblyLine(tokens);
-				for (int i = 0; i < codes.size(); ++i) {
-					std::cout << wrd << " :\t" << codes[i] << "\n";
+				for (size_t i = 0; i < codes.size(); ++i) {
+					std::cout << "\t" << wrd << " :\t" << codes[i] << "\n";
 					wrd++;
 				}
 			}
 		}
+
+		std::cout << "END;\n";
 
 	}
     catch (string s) {
