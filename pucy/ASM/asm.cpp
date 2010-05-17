@@ -72,7 +72,7 @@ bool Tokenizer::NextToken(const std::string& delimiters)
 }
 
 /*
- *
+ * Language description
  */
 
 struct Instruction {
@@ -90,14 +90,43 @@ struct Instruction {
 std::map <std::string, Instruction> lang;
 // list of definitions (mapping registers to its numeric representations)
 std::map <std::string, std::string> defs;
+// list of possible instruction types
+std::map <int, std::vector <std::string> > types;
+
+// lightweight boost-like lexical cast
+template<typename T2, typename T1>
+inline T2 lexical_cast(const T1 &in) {
+	T2 out;
+	std::stringstream ss;
+	ss << in;
+	ss >> out;
+	
+	if (ss.fail() || !ss.eof())
+		throw in + " is not a valid integer value";
+
+	return out;
+}
+
+// helper class converting hex numbers
+template <typename ElemT>
+struct HexTo {
+    ElemT value;
+    operator ElemT() const {return value;}
+    friend std::istream& operator>>(std::istream& in, HexTo& out) {
+        in >> std::hex >> out.value;
+        return in;
+    }
+};
 
 // convert string to integer
 int str2int (const string &str) {
-	stringstream ss(str);
 	int n;
-	ss >> n;
-	if (ss.fail())
-		throw str + " is not a valid integer value";
+	
+	if ( (str.length() > 1) && (str.substr(0, 2) == "0x") ) {
+		n = lexical_cast< HexTo<int> >(str);
+	} else {
+		n = lexical_cast< int >(str);
+	}
 
 	return n;
 }
@@ -204,6 +233,22 @@ void loadLanguageDesc(const char * fname = NULL) {
 	for (int i = 0; i < cnt; ++i) {
 		f >> s1 >> s2;
 		defs[s1] = s2;
+	}
+	
+	f >> cnt;
+	int t;
+	std::vector<std::string> tokens;
+	for (int i = 0; i < cnt; ++i) {
+		f >> t;
+		tokens.clear();
+		getline(f, s1);
+		Tokenizer s(s1, " \t,");
+		//std::cout << "Type: " << t << "\n";
+		while (s.NextToken()) {
+			tokens.push_back(s.GetToken());
+			//std::cout << "\t" << s.GetToken() << "\n";
+		}
+		types[t] = tokens;
 	}
 }
 
@@ -318,7 +363,58 @@ std::vector<std::string> assemblyLine(std::vector<std::string> tokens) {
 		//std::cout << "\t-- " << tokens[i] << "\n";
 	}
 
-	switch (ins.type) {
+	if (types.count(ins.type) < 1) {
+		throw  mnemo + " - unknown instruction type (check language definition file)";
+	}
+	
+	tokens[0] = ins.opcode;
+	
+	int cnt = 0;
+	for (int i = 0; i < types[ins.type].size(); ++i) {
+		
+		if (types[ins.type][i] == "0") {
+			s += "0";
+			continue;
+		}
+	
+		if (tokens.size() <= cnt)
+			throw  mnemo + " - to few arguments";
+			
+		if (types[ins.type][i] == "OPCODE") {
+			s += tokens[cnt];
+			cnt++;
+			continue;
+		}
+		
+		if (types[ins.type][i] == "Rd") {
+			if (defs.count(tokens[cnt]) < 1)
+				throw tokens[cnt] + " unknown. Should be register name R0..R7";
+			s += defs[tokens[cnt]];
+			cnt++;
+			continue;
+		}
+		
+		if (types[ins.type][i] == "IM8") {
+			s += str2bin8(tokens[cnt]);
+			cnt++;
+			continue;
+		}
+		
+		if (types[ins.type][i] == "IM16") {
+			s += str2bin16(tokens[cnt]);
+			cnt++;
+			continue;
+		}
+	}	
+	
+	if (tokens.size() > cnt)
+		throw  mnemo + " - to much arguments";
+	
+	for (int i = 0; i < s.length() / 8; ++i) {
+		ret.push_back(s.substr(i*8, 8));
+	}
+	
+/*	switch (ins.type) {
 		case 0:
 			return type0(ins, tokens);
 		case 1:
@@ -330,7 +426,7 @@ std::vector<std::string> assemblyLine(std::vector<std::string> tokens) {
 		case 4:
 			return type4(ins, tokens);
 			break;
-	}
+	}*/
 
 	return ret;
 }

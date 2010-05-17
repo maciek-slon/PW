@@ -5,9 +5,9 @@
 
 ; reset device
 RESET
-JMP 80
+JMP 0x50
 LDI	R1, -14
 ADD	R2, R1, R0
 ; store result in RAM
-STORE	R2, -2
+STORE	R2, 0xf0ff
 STOP
