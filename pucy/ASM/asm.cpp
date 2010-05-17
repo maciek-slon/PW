@@ -86,9 +86,12 @@ struct Instruction {
 	int type;
 };
 
+// list of language instructions
 std::map <std::string, Instruction> lang;
+// list of definitions (mapping registers to its numeric representations)
 std::map <std::string, std::string> defs;
 
+// convert string to integer
 int str2int (const string &str) {
 	stringstream ss(str);
 	int n;
@@ -99,6 +102,7 @@ int str2int (const string &str) {
 	return n;
 }
 
+// convert integer to its binary form (8 bit, U2 form)
 std::string int2bin8(int n) {
 	std::string s;
 	for (int i = 0; i < 8; ++i) {
@@ -113,6 +117,7 @@ std::string int2bin8(int n) {
 	return s;
 }
 
+// convert string to its binary form (8 bit, U2 form)
 std::string str2bin8(const std::string & str) {
 	int n = str2int(str);
 	if ( (n > 127) || (n < -128) ) {
@@ -122,6 +127,7 @@ std::string str2bin8(const std::string & str) {
 	return int2bin8(n);
 }
 
+// convert integer to its binary form (16 bit, U2 form)
 std::string int2bin16(int n) {
 	std::string s;
 	for (int i = 0; i < 16; ++i) {
@@ -136,6 +142,7 @@ std::string int2bin16(int n) {
 	return s;
 }
 
+// convert string to its binary form (16 bit, U2 form)
 std::string str2bin16(const std::string & str) {
 	int n = str2int(str);
 	if ( (n > 32767) || (n < -32768) ) {
@@ -145,6 +152,7 @@ std::string str2bin16(const std::string & str) {
 	return int2bin16(n);
 }
 
+// convert char to uppercase
 struct upper {
   int operator()(int c)
   {
@@ -152,11 +160,13 @@ struct upper {
   }
 };
 
+// convert integer to uppercase
 std::string uppercase(std::string s) {
 	std::transform(s.begin(), s.end(), s.begin(), upper());
 	return s;
 }
 
+// strip whitespaces from begining and end of string
 std::string strip(const std::string & line) {
 	int f = line.find_first_not_of(" \t\r\n");
 	int l = line.find_last_not_of(" \t\r\n");
@@ -167,6 +177,7 @@ std::string strip(const std::string & line) {
 	return line.substr(f, l-f+1);
 }
 
+// load language description from file
 void loadLanguageDesc(const char * fname = NULL) {
 	// language description file
     std::ifstream f;
@@ -196,6 +207,9 @@ void loadLanguageDesc(const char * fname = NULL) {
 	}
 }
 
+/*
+ * Convert each type of instruction to its binary form
+ */
 std::vector<std::string> type0(Instruction ins, std::vector<std::string> tokens) {
 	if (tokens.size() != 1)
 		throw tokens[0] + " should have no arguments";
@@ -280,9 +294,9 @@ std::vector<std::string> type4(Instruction ins, std::vector<std::string> tokens)
 	return ret;
 }
 
-/*!
-	Assmebly given tokens into instruction.
-*/
+/*
+ * Assmebly given tokens into instruction.
+ */
 std::vector<std::string> assemblyLine(std::vector<std::string> tokens) {
 	Instruction ins;
 
@@ -321,9 +335,9 @@ std::vector<std::string> assemblyLine(std::vector<std::string> tokens) {
 	return ret;
 }
 
-/*!
-	Assembly given file.
-*/
+/*
+ * Assembly given file.
+ */
 void assembly(const char * fname) {
 	std::ifstream f(fname);
 	std::string line;
@@ -387,7 +401,7 @@ void assembly(const char * fname) {
 				std::cout << "-- " << cnt << ": " << line << "\n";
 				codes = assemblyLine(tokens);
 				for (size_t i = 0; i < codes.size(); ++i) {
-					std::cout << "\t" << wrd << " :\t" << codes[i] << "\n";
+					std::cout << "\t" << wrd << " :\t" << codes[i] << ";\n";
 					wrd++;
 				}
 			}
@@ -426,8 +440,6 @@ int main(int argc, char * argv[]) {
     catch (...) {
 		std::cout << "Unknown error\n";
     }
-
-    //std::cout << "[" << strip(uppercase(" \ttest asdf kjg   \t")) << "]" << std::endl;
 
     return 0;
 }
