@@ -1,0 +1,82 @@
+TITLE "Konwerter z U2 do BCD";
+
+
+SUBDESIGN U2TOBCD(
+	DATA[7..0] : input;
+	COUNT : input;
+	GEN : input;
+	
+	WT : output;
+	
+	SIGN : output;
+	HUNDS[1..0] : output;
+	TENS[3..0] : output;
+	UNITS[3..0] : output;
+)
+VARIABLE
+	SIGN : DFF;
+	TMP[9..0] : DFF;
+	CNT[2..0] : DFF;
+	D[7..0] : DFF;
+	
+	AUT : machine of bits (Q[1..0])
+			with states (S0 = 0, S1 = 1, S2 = 2, S3 = 3);
+
+BEGIN
+	TMP[].clk = GEN;
+	CNT[].clk = GEN;
+	D[].clk = GEN;
+	SIGN.clk = GEN;
+	
+	AUT.clk = GEN;
+	
+
+	case (AUT) is
+		when S0	=>	TMP[] = 0; CNT[] = 0;
+					if (COUNT) then
+						WT = VCC;
+						SIGN = DATA7;
+						if (DATA7) then
+							D[] = (NOT DATA[]) + 1;
+						else
+							D[] = (GND, DATA[6..0]);	
+						end if;
+						AUT = S1;
+					else
+						WT = GND;
+						AUT = S0;
+					end if;
+		when S1	=>	WT = VCC; CNT[] = CNT[];
+					SIGN = SIGN;
+					TMP[] = (TMP[8..0],D7);
+					D[] = (D[6..0], GND); 
+					AUT = S2;
+		when S2	=>	WT = VCC; SIGN = SIGN;
+					D[] = D[];
+					if(CNT[] < 7) then
+						if(TMP[3..0] >= 5) then TMP[3..0] = TMP[3..0] + 3; else TMP[3..0] = TMP[3..0]; end if;
+						if(TMP[7..4] >= 5) then TMP[7..4] = TMP[7..4] + 3; else TMP[7..4] = TMP[7..4]; end if;
+						TMP[9..8] = TMP[9..8];
+						--TMP[] = (TMP[8..0], D7);
+						--D[] = (D[6..0],GND);
+						--AUT = S2;
+						AUT = S1;
+					else
+						TMP[] = TMP[];
+						AUT = S3;
+					end if;
+					CNT[] = CNT[] + 1;
+		when S3	=>	WT = GND;
+					TMP[] = TMP[];
+					SIGN = SIGN;
+					HUNDS[] = TMP[9..8];
+					TENS[] = TMP[7..4];
+					UNITS[] = TMP[3..0];
+					if(COUNT)then
+						AUT = S3;
+					else
+						AUT = S0;
+					end if;		
+	end case;
+
+END;
