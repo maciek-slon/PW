@@ -93,7 +93,14 @@ Założenia projektowe które przyjeliśmy
 
 \section{Schemat blokowy układu}
 
-Schemat blokowy - w sumie trzeba przerysować to z treści
+Na rysunku~\ref{fig:block} przedstawiony został schemat blokowy zaprojektowanego układu. Każdy bloczek oznacza w ogólnosci pojedynczy moduł systemu (zaprojektowany osobno i niezależnie od pozostałych). Bloczki zawarte wewnątrz innych są ich częścią składową i poza nimi nie ma do nich dostępu (np. blok mnożenia i rejestry CPU, zamiana postaci U2 na format BCD w układzie wyjściowym).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=8cm]{./pict/Block.png}
+\caption{Ogólny schemat blokowy projektowanego układu.}
+\label{fig:block}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Dokładne opisy poszczególnych komponentów
@@ -102,6 +109,32 @@ Schemat blokowy - w sumie trzeba przerysować to z treści
 
 \section{Moduł CPU}
 
+
+\subsection{Wczytywanie instrukcji, operandów i rejestrów}
+Główny moduł mikrokontrolera został zaimplementowany w postaci jednej maszyny stanów, której poszczególne stany są dokładniej omówione w dalszj części opisu. Przy projektowaniu została podjęta decyzja, że zamiast warunkowego pobieraniadrugiego i ewentualnie trzeciego bajtu z pamięci w zależności od instrukcji, a także od warunkowego pobierania wartości z rejestrów, zawsze będą pobierane 3 słowa z pamięci i odczytywane trzy rejestry. Działa to w sposób następujący:
+\begin{itemize}
+  \item Z pamięci odczytywane jest pierwsze słowo (zawierające kod rozkazu i ewentualnie numer rejestru)
+  \item Z pamięci odczytywane jest drugie słowo, a jednoczeście do zmiennej pomocniczej wczytywana jest zawartość rejestru o numerze zakodowanym w pierwszym słowie
+  \item Z pamięci wczytywane jest trzecie słowo, a z rejestrów wczytywane są te o numerach zakodowanych w drugim słowie
+\end{itemize}
+W ten sposób zawsze do trzech zmiennych IC1..IC3 wczytywane są trzy słowa z pamięci programu, a do zmiennych TMP0..TMP2 wczytywana jest zawartość trzech rejestrów. Dzięki temu w późniejszym etapie przy wykonywaniu instrukcji wszystkie potrzebne dane są już przygotowane i wykonanie operacji najczęściej sprowadza się do zapisania wyniku do pamięci i odpowiedniego zwiększenia licznika rozkazów PC. Jeśli instrukcja, którą obsługujemy jest krótsza niż 3 słowa (a większość jest), to po zwiększeniu PC "niewykorzystane" słowa zostaną ponownie wczytane i zinterpretowane przez następną komendę. 
+
+Niewątpliwą zaleta takiego rozwiązania jest duże uproszczenie funkcji każdej instrukcji, przy poświęceniu niewiele dłuższego czasu na obsługę całego cyklu (różnica jest praktycznie niezauważalna, a w niektórych przypadkach rozwiązanie zastosowane przez nas jest szybsze od pobierania kolejnych słów instrukcji i wczytywania zawartości rejestrów już w funkcji obsługi danej instrukcji).
+
+\subsection{Opis stanów procesora}
+Pojedynczy cykl pracy procesora, a więc przejście od wczytania instrukcji i operandów aż do jej wykonania i zapisania wyników, moze wymagać przejścia przez następujące stany:
+\begin{description}
+\item[ST0] \hfill \\
+Sprawdzenie, czy nie został ustawiony sygnał STOP (poprzez wykonanie instrukcji STOP bądź niedozwoloną sekwencję sterującą), oraz pobranie z pamięci słowa spod adresu wskazywanego przez PC.
+\item[ST1] \hfill \\
+Odczekanie ustalonej liczby taktów na ustalenie się danych odczytanych z pamięci\footnote{Podczas testów okazało się, że pamięć nie nadąża z ustawieniem danych na liniach, przez co procesor dostawał błędne odczyty}
+\item[ST2] \hfill \\
+Zapisanie danych do odpowiednich zmiennych pomocniczych (dane wczytane z pamięci do zmiennych IC1..IC3, wczytanie zawartości odpowiednich rejestrów do zmiennych TMP0..TMP2)
+\item[ST3] \hfill \\
+Interpretacja oraz wykonanie instrukcji wczytanej z pamięci. Wszystkie operandy sa już wczytane, a więc w większości przypadków wymagane jest jedynie zapisanie wyniku odpowiedniego działania do pamięci bądź do rejestru. W przypadku operacji wymagających odczekania na sygnał WAIT jest to realizowane już wewnątrz danego bloku instrukcji.
+\item[ST\_WAIT] \hfill \\
+Stan oczekiwania przed rozpoczęciem nowego cyklu pracy, wykorzystywany podczas zapisu wyników wykonania poprzedniej instrukcji do pamięci.
+\end{description}
 
 \section{Pamięć RAM}
 
@@ -124,9 +157,9 @@ Algorytm polega na sukcesywnym dodawaniu do sumy częściowej P jednej z dwóch 
   \end{enumerate}
   \item Jeśli dwa najmłodsze bity sumy częściowej P wynoszą:
   \begin{enumerate}
-    \item 01 -- P = P + A
-    \item 10 -- P = P + S
-    \item 00 lub 11 -- P pozostaje bez zmian
+    \item 01: P = P + A
+    \item 10: P = P + S
+    \item 00 lub 11: P pozostaje bez zmian
   \end{enumerate}
   \item Przesunięcie arytmetyczne P o jeden bit w prawo
   \item Powtórzenie kroków od 2 i 3 w sumie n razy
@@ -194,13 +227,13 @@ W drugiej sekcji zawarta jest prosta definicja rejestrów dostepnych dla danej a
 Trzecia sekcja pliku z definicją języka zawiera zdefiniowane typy instrukcji (do nich własnie odnoszą się typy z sekcji pierwszej). Każdy typ składa się z 2 głównych części: liczbiwego kodu typu oraz definicji składni instrukcji danego typu.
 
 Definicja składni może zawierać jeden bądź wiele elementów składowych, z których kazdy oznacza, jak wynikowo powinna zostać złozona instrukcja, a także jakiego typu parametry są dozwolone. Możliwe wartości do wstawienia w tym miejscu to:
-\begin{itemize}
-  \item OPCODE -- kod instrukcji (mnemonik w kodzie źródłowym, binarny kod operacji w pliku wynikowym)
-  \item Rd -- symboliczna nazwa jednego z rejestrów, zamieniana na jego kod w pliku wynikowym
-  \item IM8 -- liczba całkowita (w postaci dziesiętnej bądź szesnastkowej poprzedzonej '0x'), w pliku wynikowym zapisywana w postaci 8-bitowej
-  \item IM16 -- jak IM8, tyle że w pliku wynikowym zamieniana na liczbę 16-bitową
-  \item 0 -- w tym miejscu w pliku wynikowym zostanie wstawione jedno 0, nie wpływa na postać instrukcji w kodzie źródłowym. Używane do wyrównywania instrukcji do wielokrotności 8 bitów.
-\end{itemize}
+\begin{description}
+  \item[OPCODE] -- kod instrukcji (mnemonik w kodzie źródłowym, binarny kod operacji w pliku wynikowym)
+  \item[Rd] -- symboliczna nazwa jednego z rejestrów, zamieniana na jego kod w pliku wynikowym
+  \item[IM8] -- liczba całkowita (w postaci dziesiętnej bądź szesnastkowej poprzedzonej '0x'), w pliku wynikowym zapisywana w postaci 8-bitowej
+  \item[IM16] -- jak IM8, tyle że w pliku wynikowym zamieniana na liczbę 16-bitową
+  \item[0] -- w tym miejscu w pliku wynikowym zostanie wstawione jedno 0, nie wpływa na postać instrukcji w kodzie źródłowym. Używane do wyrównywania instrukcji do wielokrotności 8 bitów.
+\end{description}
 
 \subsection{Pliki źródłowe}
 
@@ -250,23 +283,24 @@ R7	111
 \end{lstlisting}
 
 Dostępnych jest 14 instrukcji 5 typów, każda z nich ma 5-bitowy kod. Procesor wyposażony jest w 8 rejestrów, każdy z nich o 3-bitowym kodzie. Typy instrukcji można przetłumaczyć następująco:
-\begin{itemize}
-  \item 0 -- instrukcja składa się jedynie z samego kodu operacji, pozostałe zera służą do dopełnienia długości kodu wynikowego do wielokrotności 8 bitów. Instrukcja bezargumentowa.
+\begin{enumerate}
+\setcounter{enumi}{-1}
+  \item instrukcja składa się jedynie z samego kodu operacji, pozostałe zera służą do dopełnienia długości kodu wynikowego do wielokrotności 8 bitów. Instrukcja bezargumentowa.
 
   Przykład: STOP -- zatrzymanie wykonywania programu
-  \item 1 -- Instrukcja posiadająca jeden argument typu całkowitoliczbowego, 8 bitowego. 
+  \item instrukcja posiadająca jeden argument typu całkowitoliczbowego, 8 bitowego. 
 
   Przykład: JMP 0x20 -- skok bezwarunkowy pod podany adres
-  \item 2 -- instrukcja posiadająca dwa argumenty -- w kolejności symbol rejestru oraz stałą liczbową 8-bitową.
+  \item instrukcja posiadająca dwa argumenty -- w kolejności symbol rejestru oraz stałą liczbową 8-bitową.
   
   Przykład: LDI R3, -123 -- załadowanie do rejestru R3 wartości -123
-  \item 3 -- instrukcja posiadająca 3 argumenty, wszystkie będące symbolami rejestrów.
+  \item instrukcja posiadająca 3 argumenty, wszystkie będące symbolami rejestrów.
 
   Przykład: ADD R2, R3, R4 -- dodanie rejestrów R3 i R4, umieszczenie wyniku w rejestrze R2
-  \item 4 -- instrukcja posiadająca dwa argumenty - symbol rejestru oraz stała liczbową 16-bitową.
+  \item instrukcja posiadająca dwa argumenty - symbol rejestru oraz stała liczbową 16-bitową.
 
   Przykład: STORE R5, 0x1234 -- zapisanie wartości rejestru R5 do pamięci RAM pod adres 0x1234.
-\end{itemize}
+\end{enumerate}
 
 
 \lstset{
