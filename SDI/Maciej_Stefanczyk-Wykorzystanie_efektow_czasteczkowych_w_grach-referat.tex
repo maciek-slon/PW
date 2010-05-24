@@ -1,0 +1,427 @@
+
+%%%%%%%%%%%%%%%%%%%%%%% file typeinst.tex %%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% This is the LaTeX source for the instructions to authors using
+% the LaTeX document class 'llncs.cls' for contributions to
+% the Lecture Notes in Computer Sciences series.
+% http://www.springer.com/lncs       Springer Heidelberg 2006/05/04
+%
+% It may be used as a template for your own input - copy it
+% to a new file with a new name and use it as the basis
+% for your article.
+%
+% NB: the document class 'llncs' has its own and detailed documentation, see
+% ftp://ftp.springer.de/data/pubftp/pub/tex/latex/llncs/latex2e/llncsdoc.pdf
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\documentclass[runningheads,a4paper]{llncs}
+
+\usepackage{amssymb}
+\setcounter{tocdepth}{3}
+\usepackage{graphicx}
+
+\usepackage{polski}
+\usepackage[cp1250]{inputenc}
+
+\usepackage{url}
+\urldef{\mailsa}\path|mstefanc@stud.elka.pw.edu.pl|
+\newcommand{\keywords}[1]{\par\addvspace\baselineskip
+\noindent\keywordname\enspace\ignorespaces#1}
+
+\begin{document}
+
+\mainmatter  % start of an individual contribution
+
+% first the title is needed
+\title{Wykorzystanie efektów cz¹steczkowych w grach}
+
+% a short form should be given in case it is too long for the running head
+\titlerunning{Wykorzystanie efektów cz¹steczkowych w grach}
+
+% the name(s) of the author(s) follow(s) next
+%
+% NB: Chinese authors should write their first names(s) in front of
+% their surnames. This ensures that the names appear correctly in
+% the running heads and the author index.
+%
+\author{Maciej Stefañczyk}
+%
+\authorrunning{Wykorzystanie efektów cz¹steczkowych w grach}
+% (feature abused for this document to repeat the title also on left hand pages)
+
+% the affiliations are given next; don't give your e-mail address
+% unless you accept that it will be published
+\institute{Wydzia³ Elektroniki i Technik Informacyjnych\\
+Politechnika Warszawska\\
+\mailsa\\
+\url{}}
+
+%
+% NB: a more complex sample for affiliations and the mapping to the
+% corresponding authors can be found in the file "llncs.dem"
+% (search for the string "\mainmatter" where a contribution starts).
+% "llncs.dem" accompanies the document class "llncs.cls".
+%
+
+\toctitle{Wykorzystanie efektów cz¹steczkowych w grach}
+\tocauthor{Maciej Stefañczyk}
+\maketitle
+
+
+\begin{abstract}
+Efekty cz¹steczkowe s¹ wykorzystywane do generowania najprzeró¿niejszych efektów trudnych do zasymulowania przy pomocy innych technik. Niniejszy artyku³ stara siê w sposób krótki i treœciwy zapoznaæ czytelnika z najwa¿niejszymi metodami ich generowania i poprawy jakoœci uzyskanych rezultatów. Pokazuje tak¿e, jak wszechstronne i uniwersalne s¹ systemy cz¹steczkowe. Wszystkie metody poparte s¹ przyk³adami ukazuj¹cymi zasadnoœæ ich stosowania.
+\emph{abstract} environment.
+\keywords{Efekty cz¹steczkowe, miêkkie cz¹steczki, megacz¹steczki, symulacja p³ynów, generowanie ognia, chmury wolumetryczne}
+\end{abstract}
+
+
+\section{Podstawowe informacje}
+
+\subsection{Motywacja i miejsca stosowania cz¹steczek}
+
+Na pocz¹tku kwestia najwa¿niejsza -- po co w ogóle cz¹steczki i dlaczego w³aœnie one? 
+Okazuje siê, ¿e jest ca³a gama efektów, które s¹ trudne do zasymulowania i realistycznego 
+wygenerowania (szczególnie w czasie rzeczywistym -- a tak przecie¿ dzia³aj¹ gry) klasycznymi metodami. 
+Efekty te to chocia¿by ogieñ, wybuchy, sierœæ czy inne, p³ynne, rozmyte 
+b¹dŸ w jakikolwiek sposób niejednolite i losowe w swej naturze. Patrz¹c na kilka 
+p³on¹cych pochodni spodziewamy siê, ¿e ka¿dy p³omieñ bêdzie zachowywa³ siê 
+odmiennie, a nie jest fizycznie mo¿liwe przygotowanie animacji kilkunastu b¹dŸ kilkuset 
+rodzajów p³omieni pochodni -- a to przecie¿ tylko jeden z setek, b¹dŸ nawet tysiêcy obiektów wystêpuj¹cych
+w grze.
+
+Drug¹ wa¿n¹ kwesti¹ jest miejsce stosowania efektów i systemów cz¹steczkowych.
+OdpowiedŸ jest najprostsza, jaka tylko mo¿e byæ, mianowicie wszêdzie.
+Praktycznie w ka¿dej grze -- od prostych gier platformowych, 
+poprzez symulatory lotu, gry przygodowe, wyœcigowe, sportowe 
+mo¿emy spotkaæ siê z elementami generowanymi przy u¿yciu 
+systemów cz¹steczkowych. WeŸmy na przyk³ad kilka popularnych gier z ró¿nych kategorii. 
+Na pocz¹tek \textit{World of Warcraft} -- gra komputerowa z gatunku MMORPG\footnote{z ang. Massively Multiplayer
+ Online Role Playing Game -- rodzaj gier komputerowych RPG, w których du¿a liczba graczy mo¿e graæ ze sob¹ w
+ wirtualnym œwiecie; podobnie jak w innych rodzajach RPG gracz wciela siê w postaæ i kieruje jej dzia³aniami.}
+ wyprodukowana przez amerykañsk¹ firmê Blizzard Entertainment (rys.~\ref{fig:wow}). W tej grze praktycznie w
+ ka¿dym momencie na ekranie widaæ efekty uzyskane przy pomocy cz¹steczek. Wszystkie b³yski spowodowane przez
+ czary, aury unoszace siê wokó³ bohaterów i potworów, ogieñ, dym, b³yskawice to rezultat zastosowania opiisywanych
+ metod.
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{wow_arena}
+\caption{Zrzut ekranu z gry \textit{World of Warcraft}}
+\label{fig:wow}
+\end{figure}
+
+Drugim przyk³adem niech bêdzie którakolwiek z gier wyœcigowych, np. \textit{Need for Speed: Shift} -- gra z serii
+ wydawanej przez Electronic Arts (rys.~\ref{fig:nfs}). W grach tego typu realizm rogrywki uzyskuje siê poprzez dodanie efektów typu
+ dymu spod kó³, spalin b¹dŸ nawet ognia z rury wydechowej oraz œladów opon, które zostaj¹ na asfalcie. Wszystkie z
+ nich -- jak ³atwo siê domyœliæ -- to systemy cz¹steczkowe. 
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{nfs_shift}
+\caption{Zrzut ekranu z gry \textit{Need for Speed: Shift}}
+\label{fig:nfs}
+\end{figure}
+
+Nawet w prostych grach platformowych i zrêcznoœciowych dla podniesienia przyjemnoœci p³yn¹cej z gry (badŸ
+ czasami dla utrudnienia rozgrywki i rozproszenia uwagi) stosuje siê du¿o rozb³ysków, wybuchów i innych tego typu
+ efektów. Przyk³adem niech bêdzie gra \textit{The Legends of Arkanoid} (rys.~\ref{fig:tloa}) -- prosta gra polegaj¹ca na zbijaniu klocków,
+ gdzie wykorzystane efekty widaæ w ka¿dym momencie -- podczas lotu pi³eczki b¹dŸ po zbiciu klocka.
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{tloa}
+\caption{Zrzut ekranu z gry \textit{The Legends of Arkanoid}}
+\label{fig:tloa}
+\end{figure}
+
+
+\subsection{Definicje}
+
+Skoro ju¿ wiadomo gdzie, dlaczego i po co stosuje siê efekty cz¹steczkowe to czas wyjaœniæ, czym i jak je generowaæ.
+
+Podstawowym elementem jest sama cz¹steczka - pojedynczy 
+obiekt odwzorowuj¹cy wygl¹d i zachowanie jednej b¹dŸ wielu 
+cz¹stek obecnych w rzeczywistym efekcie (cz¹stki kurzu, krople 
+wody, iskry). Ich charakterystykê mo¿na podzieliæ na kilka grup:
+\begin{itemize}
+\item w³asnoœci fizyczne (pozycja, rozmiar, prêdkoœæ),
+\item w³asnoœci graficzne (sposób reprezentacji na ekranie),
+\item zmienne zwi¹zane z symulacj¹ (wiek i czas ¿ycia cz¹stki)
+\end{itemize}
+Praktycznie wszystkie w³asnoœci zwi¹zane bezpoœrednio z sam¹ cz¹steczk¹ dotycz¹ tylko jej aktualnego
+stanu, w mniejszym stopniu zwi¹zane s¹ ze sposobem jej dalszego zachowania.
+
+Informacje o ca³ej grupie cz¹stek zawiera system cz¹steczkowy. Jest to g³ówny element zarz¹dzaj¹cy ca³ym efektem,
+okreœlaj¹cy regu³y generowania nowych cz¹steczek (czêstotliwoœæ ich emisji, kierunek, wszystkie pocz¹tkowe
+wartoœci), interakcje cz¹stek z elementami sceny, moze zajomowaæ siê te¿ symulacj¹ fizyki dla samych cz¹steczek.
+Wiele systemów ma te¿ okreœlon¹ maksymaln¹ iloœæ jednoczeœnie wyœwietlanych obiektów (ma to zwi¹zek z
+wydajnoœci¹), a gdy tych obiektów robi siê zbyt wiele najstarsze z nich s¹ po prostu usuwane. Widaæ to wyraŸnie na
+przyk³ad w niektórych grach wyœcigowych, gdzie po pewnym czasie œlady opon z asfaltu znikaj¹. Najproœciej mo¿na to
+zaobserwowaæ krêc¹c "b¹czki" w miejscu. Bardzo wa¿ne jest wiêc odpowiednie dobranie wszystkich parametrów
+systemu w taki sposób, aby nie obni¿aæ wydajnoœci a jednoczeœnie nie doprowadzaæ do sytuacji takich jak wczeœniej
+opisana, które mog¹ obni¿aæ przyjemnoœæ z gry.
+
+\section{Przegl¹d technik tworzenia efektów cz¹steczkowych}
+
+W tym rozdziale przybli¿one zostanie kilka najpopularniejszych technik, wraz z ich zaletami i wadami, przyk³adami zastosowania w konkretnych produkcjach oraz mo¿liwoœciami ich ulepszenia.
+
+\subsection{Najprostsze efekty}
+
+Najprostsze efekty mo¿na uzyskaæ ju¿ przy zastosowaniu samych 
+kolorowych punktów (przy odpowiednich parametrach ca³ego 
+systemu mo¿na uzyskaæ dobre efekty np. Fajerwerków). Trochê 
+bardziej z³o¿one efekty mog¹ wymagaæ wykorzystania 
+bilboardów – oteksturowanych czworok¹tów, które zwrócone s¹ 
+zawsze przodem w stronê obserwatora. Na rysunku~\ref{fig:bilboards} widaæ 
+przyk³adowy efekt wybuchu oraz tekstury wykorzystane do jego 
+stworzenia. 
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{bilboards}
+\caption{Efekt wybuchu stworzony przy u¿yciu kilku tekstur}
+\label{fig:bilboards}
+\end{figure}
+W zale¿noœci od wieku cz¹stka przyjmuje 
+odpowiedni¹ teksturê oraz kolor, a po pewnym czasie znika. Przy 
+pomocy praktycznie takich samych tekstur uzyskaæ mo¿na doœæ 
+realistyczny efekt p³omieni przedstawiony na rysunku~\ref{fig:fire}. Zmianie ulegaj¹ 
+parametry zwi¹zane z kolorem, a tak¿e tryb mieszania kolorów --
+w przypadku przedstawionego ognia ka¿da nastêpna cz¹stka 
+jest rysowana poprzez dodawanie swojego koloru do koloru 
+piksela ju¿ narysowanego, przez co w œrodku p³omienia kolor 
+nasyca siê a¿ do bia³ego (efekt doœæ dobrze odwzorowuje 
+rzeczywisty wygl¹d ognia).
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{fire}
+\caption{Ogieñ stworzony z tych samych tekstur co wybuch}
+\label{fig:fire}
+\end{figure}
+
+Niew¹tpliw¹ zalet¹ przedstawionej metody jest prostota jej 
+implementacji a tak¿e wykorzystania: wystarczy kilka tekstur i 
+ju¿ przy pomocy samej manipulacji parametrami systemu 
+mo¿emy wygenerowaæ ca³¹ gamê najró¿niejszych efektów. 
+Dodatkowo przy efektach sk³adaj¹cych siê z ma³ej liczby 
+jednoczeœnie aktywnych cz¹stek (np. wybuchy) system taki jest 
+bardzo wydajny -- renderowane jest jedynie kilkanaœcie do 
+kilkudziesiêciu prostok¹tów.
+
+Metoda ta ma jednak te¿ szereg wad: przy wiêkszej liczbie cz¹stek 
+wydajnoœæ zaczyna spadaæ -- szczególnie jeœli chcemy 
+zasymulowaæ efekty takie jak kurz b¹dŸ dym (dla dobrego efektu 
+dla skomplikowanej sceny nale¿a³oby generowaæ wiele tysiêcy 
+cz¹stek). Dodatkowo sama dwuwymiarowa natura stosowanych 
+bilboardów powoduje kolejne problemy -- niew³aœciwe, ostre 
+przeciêcia cz¹stek ze scen¹ oraz brak prawid³owego oœwietlenia 
+(zarówno samych cz¹stek jak i rzucanych przez nie cieni).
+
+\subsection{Miêkkie cz¹steczki}
+
+Miêkkie cz¹steczki s¹ rozwi¹zaniem jednego z wymienionych problemów -- z ich pomoc¹
+mo¿na w bardzo prosty i szybki sposób zmiekczyæ krawêdzie cz¹stek w miejscach przeciêcia z obiektami
+ju¿ narysowanymi na scenie. W ich przypadku, tak samo jak 
+wczeœniej, same cz¹stki reprezentowane s¹ przez bilboardy, 
+jednak podczas ich renderowania wykorzystywana jest 
+dodatkowa informacja o g³ebi sceny w aktualnie rozpatrywanym 
+punkcie. Jeœli obiekty s¹ blisko cz¹stki to zwiêkszana jest jej 
+przezroczystoœæ, przez co p³ynnie wtapia siê ona w otoczenie. 
+\begin{figure}
+\centering
+\includegraphics[width=8cm]{soft}
+\caption{Dla uwypuklenia efektu dzia³ania miêkkich cz¹steczek pokazany jest 
+nieprzezroczysty bilboard przecinaj¹cy siê z terenem. Na górze 
+efekt bez zmiêkczania, ni¿ej widaæ p³ynne zwiêkszanie 
+przezroczystoœci i miêkkie wtopienie w otoczenie. }
+\label{fig:soft}
+\end{figure}
+
+Krótkiego wyjaœnienia mo¿e wymagaæ jeszcze sama mapa g³êbi. Czym ona jest i jak powstaje?
+Jest to dodatkowy bufor, o wielkoœci równej rozmiarowi generowanego obrazu (czyli najczêœciej rozdzielczoœci ekranu)
+przechowuj¹cy w ka¿dym punkcie odleg³oœæ od obserwatora do znajduj¹cego siê tam obiektu. Wype³niana jest w
+momencie rysowania obiektów, a wiêc jeœli chcemy j¹ wykorzystaæ do zmiêkczania cz¹steczek, to musimy je rysowaæ
+na koñcu, ju¿ po narysowaniu innych obiektów.
+\begin{figure}
+\centering
+\includegraphics[width=12cm]{depth}
+\caption{Wygenerowana scena wraz z jej map¹ g³êbi. Im kolor jaœniejszy tym obiekt znajduje siê bli¿ej obserwatora.}
+\label{fig:depth}
+\end{figure}
+
+Z technicznego punktu widzenia do opisu metody generowania miêkkich krawêdzi wystarczy nam (oprócz mapy g³êbi)
+jedna funkcja opisuj¹ca szybkoœæ zmian przezroczystoœci oraz pewna sta³a wartoœæ oznaczaj¹ca graniczn¹ odleg³oœæ,
+powy¿ej której na przezroczystoœæ nie bêd¹ mia³y wp³ywu obiekty znajduj¹ce siê na scenie. Wspomniana funkcja mo¿e
+byæ nawet najprostszej postaci, a wiêc liniowa, jednak wtedy efekt nie jest do koñca satysfakcjonuj¹cy -- w miejscu,
+gdzie cz¹stka znajduje siê w odleg³oœci granicznej od innych obiektów wystepuje zauwa¿alna zmiana jasnoœci.
+Z tego powodu czêœciej stosuje siê funkcje wyk³adnicze, b¹dŸ z³o¿one z funkcji wyk³adniczych.
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{soft_problem}
+\caption{Technika zmiêkczania cz¹stek. Po lewej: przyk³adowa funkcja zmiany przezroczystoœci w zale¿noœci od odleg³oœci. Po prawej: porównanie liniowej i wyk³adniczej funkcji wygaszania.}
+\label{fig:soft_problem}
+\end{figure}
+
+Chocia¿ opisywana metoda nie rozwi¹zuje wszystkich problemów (w szczególnoœci cz¹stki nadal s¹ dwuwymiarowe,
+wiêc nie ma mowy o efektach objêtoœciowych), to technika ta jest czêsto wykorzystywana ze wzglêdu na niewielki
+wymagany nak³ad si³ w jej implementacji (jest to raczej rozszerzenie metody podstawowej ni¿ coœ ca³kowicie nowego)
+i doœæ dobre efekty.
+
+\subsection{Megacz¹steczki}
+
+Drug¹ z opisywanych zaawansowanych metod generowania cz¹stek s¹ megacz¹steczki. Tutaj zmianie ulega ju¿
+sposób reprezentacji cz¹stek oraz sam proces ich generowania. Najpierw na podstawie kilku b¹dŸ kilkunastu du¿ych
+bry³ okreœlany jest ogólny kszta³t efektu oraz obliczane jest jego oœwietlenie, a nastêpnie na wygenerowanym obrazie
+dokonywane s¹ przekszta³cenia okreœlaj¹ce jego ostateczny wygl¹d.
+
+Rozdzielenie tych dwóch faz ma kolosaln¹ zaletê: symulacja ruchu 
+i rozprzestrzeniania wykonywana jest na bardzo ma³ej liczbie 
+obiektów, przez co jest bardzo szybka. Po wyrenderowaniu 
+obrazu kul do osobnego bufora wykonywane jest na nim kilka 
+ró¿nych operacji, min. rozmycie, zaszumienie, przemieszczanie 
+pikseli w ró¿ne strony. Dziêki temu w czasie niezale¿nym od 
+iloœci cz¹stek a jedynie od wielkoœci renderowanego obrazu 
+otrzymujemy np. ³adny i w pe³ni oœwietony dym. Nastêpnie 
+bufor ten jest mieszany z dotychczasow¹ scen¹ przy wykorzystaniu
+informacji o g³êbi sceny i przezroczystoœci samego efektu. Widaæ to 
+w uproszczeniu na przedstawionych obrazkach.
+\begin{figure}
+\centering
+\includegraphics[width=12cm]{mega_1}
+\caption{Technika generowania dymu przy pomocy megacz¹steczek -- okreœlenie kszta³tu i postprocessing.}
+\label{fig:mega_1}
+\end{figure}
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{mega_2}
+\caption{Mieszanie wygenerowanego dymu z docelow¹ scen¹.}
+\label{fig:mega_2}
+\end{figure}
+
+Megacz¹steczki umo¿liwiaj¹ tworzenie efektów niemal¿e w pe³ni objêtoœciowych -- stworzony w ten sposób np. dym
+jest poprawnie oœwietlony, a poruszanie siê w jego wnêtrzu nie sprawia wra¿enia przebijania kolejnych warstw
+papieru (tak jak przy przechodzeniu przez dym z³o¿ony z bilboardów). 
+Niestety -- jak wszystkie metody -- i ta ma kilka wad. Po pierwsze 
+jest to prawie pe³ne 3D -- a prawie robi wielk¹ ró¿nicê. Etap 
+postprocessingu nadal wykonywany jest na obrazie 
+dwuwymiarowym, przez co przy zbyt du¿ym rozci¹ganiu obrazu 
+i skomplikowanych scenach mo¿e dojœæ mimo wszystko do 
+nienaturalnych przeciêæ z innymi obiektami.
+Przy reprezentacji wielu cz¹stek przy pomocy jednego obiektu, 
+takiego jak kula, trudno jest symulowaæ zachowanai fizyczne 
+takie jak np. odbicia czastek od pod³o¿a, dlatego metoda ta 
+sprawdza siê g³ównie przy tworzeniu dymu b¹dŸ chmur, które 
+nie wymagaj¹ takiej symulacji.
+Metoda ta wymaga tak¿e odpowiedniej kolejnoœci generowania 
+sceny -- najpierw nale¿y wyrenderowaæ obiekty statyczne, ¿eby 
+póŸniej móc wykorzystaæ informacjê o g³êbi do mieszania 
+efektów. Z podobnych powodów trudne mo¿e okazaæ siê te¿ 
+nak³adanie kilku takich efektów w jednym miejscu.
+
+\subsection{Statyczne cz¹steczki -- w³ókna}
+
+W dalszej czêœci omówione zostan¹ pokrótce jeszcze dwie metody stosowane przy tworzeniu efektów
+cz¹steczkowych. Pierwsz¹ z nich s¹ statyczne cz¹steczki. W tej metodzie zamiast 
+œledziæ sam¹ cz¹stkê zapamiêtujemy ca³¹ jej trajektoriê, która 
+ostatecznie tworzy potrzebny nam obiekt. Jest to metoda czêsto 
+zach³anna obliczeniowo, wiêc wykorzystywana jest raczej 
+podczas przygotowywania zasobów do gier, generowania 
+postaci b¹dŸ terenu, du¿o rzadziej w czasie rzeczywistym.
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{static}
+\caption{Po lewej stronie cz¹steczki wygenerowane klasycznymi metodami. Po prawej te same obiekty emitowane przez system statycznych cz¹steczek.}
+\label{fig:static}
+\end{figure}
+
+Metoda stosowana mo¿e byæ np. do generowania realistycznych pól 
+pe³nych trawy (rozmieszczenie w sposób losowy, dodatkowo 
+ka¿de ŸdŸb³o mo¿e byæ wygenerowane losowo). Jest to metoda alternatywna
+do wykorzystywania fraktali, mo¿e te¿ byæ stosowana równolegle z ni¹. 
+Tak stworzona trawa mo¿e byæ jednak doœæ du¿ym obci¹¿eniem dla systemu, w którym wyœwietliæ 
+trzeba jeszcze setki innych obiektów, dlatego czêsto statyczne cz¹stki wykorzystywane s¹ do stworzenia
+grafik imituj¹cych trawê, które ju¿ w dwuwymiarowej postaci wstawiane s¹ na scenê.
+
+Innym miejscem, gdzie zauwa¿yæ mo¿na miêkkie cz¹steczki mo¿e byæ chocia¿by sierœæ, a jedn¹ z najbardziej
+znanych postaci z filmów i gier posiadaj¹cych tak¹ sierœæ jest niebieski stwór z produkcji \textit{Potwory i spó³ka}.
+
+\subsection{Metakule}
+
+Ostatni¹ opisywan¹ metod¹ jest reprezentacja 
+graficzna cz¹stek przy pomocy metapowierzchni (g³ównie 
+metakuli). S¹ to powierzchnie, zdefiniowane przy pomocy 
+funkcji matematycznych, które p³ynnie siê ze sob¹ ³¹cz¹ i
+mieszaj¹, nadaj¹c przez to efektom bardziej organiczny wygl¹d.
+Ka¿d¹ cz¹stkê opisujemy (w przypadku kuli) za pomoc¹ wspó³rzêdnych jej œrodka, a ca³y 
+efekt ma dodatkowo okreslon¹ pewn¹ wartoœæ progu, która okreœla podstawowy promieñ kuli.
+
+Po zmianie stanu systemu i uaktualnieniu po³o¿enia wszystkich kul ze wzoru~(\ref{equ:meta}) wyliczane 
+s¹ punkty w przestrzeni, które s¹ pokryte przez kule. Jeœli nierównoœæ jest spe³niona, to punkt jest uznawany
+za le¿¹cy wewn¹trz kuli (b¹dŸ kilku po³¹czonych).
+\begin{equation}
+  \sum_{i=1}^{n}metakula_i(x,y,z) \leq p
+\label{equ:meta}
+\end{equation}
+\begin{figure}
+\centering
+\includegraphics[width=12cm]{metaball}
+\caption{Poszczególne etapy ³¹czenia siê dwóch metakul. WyraŸnie widaæ ich przyci¹ganie siê
+w momencie zbli¿ania. Kolor jest wyliczany na podstawie odleg³oœci danego punktu od œrodka kul.
+W ostatniej fazie wszystkie punkty s¹ równo oddalone od obu œrodków (które siê pokrywaj¹), tak wiêc kolor
+jest œredni¹ z kolorów wyjœciowych.}
+\label{fig:metaball}
+\end{figure}
+
+Metakule wykorzystaæ mo¿na do tworzenia chocia¿by strumieni wody 
+(takich jak fontanny) b¹dŸ nawet do generowania ¿ywych 
+stworzeñ (niektóre ze stworzeñ w grze Spore tworzone by³y 
+poprzez generowanie odpowiedniej iloœci metakulek, a ich 
+kszta³t definiowany by³ poprzez zmianê parametrów systemu 
+generuj¹cego). W ten sposób uzyskane efekty maj¹ wszystkie cechy, których oczekujemy
+patrz¹c na ró¿ne ¿ywe organizmy -- ka¿dy z nich jest niepowtarzalny (losowoœæ systemu 
+generuj¹cego), wszystkie wykazuj¹ pewne cechy wspólne (zasady generowania cz¹stek oraz ich trajektorii)
+a tak¿e wszystkie wygl¹daj¹ w sposób zgodny z intuicj¹ dotycz¹c¹ ¿ywych organizmów (brak ostrych k¹tów
+i po³¹czeñ pomiêdzy ró¿nymi segmentami stworzenia).
+
+\begin{thebibliography}{4}
+
+\bibitem{wiki1} Particle System, Wikipedia, \url{http://en.wikipedia.org/wiki/Particle_system}
+
+\bibitem{Lorach} Lorach T.: Soft Particles, NVidia (2007)
+
+\bibitem{Torque} Torque 3D homepage \url{http://www.torquepowered.com}
+
+\bibitem{inframez} Bahnassi H., Bahnassi W.: Volumetric Clouds and Mega Particles, \url{http://www.inframez.com/events_volclouds_slide01.htm}
+
+\bibitem{wiki2} Metaball, Wikipedia, \url{http://pl.wikipedia.org/wiki/Metaball}
+
+\end{thebibliography}
+
+\newpage
+\section*{Za³¹cznik: Dodatkowe zrzuty ekranów z gier}
+\begin{figure}
+\centering
+\includegraphics[width=10cm]{soft_ex}
+\caption{Miêkkie cz¹steczki: Na górze obraz z zastosowaniem klasycznej metody, na dole po w³¹czeniu
+miêkkich czasteczek. Zrzut z gry \textit{Two Worlds}.}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=12cm]{mega_nuclear}
+\caption{Megacz¹steczki: Dwa etapy dzia³ania systemu: na górze symulacja i oœwietlenie na kilku du¿ych kulach, ni¿ej ta sama scena po zastosowaniu postprocessingu.}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=9cm]{monster}
+\caption{Statyczne cz¹steczki: Sierœæ jest jednym z obiektów, które mo¿na generowaæ i symulowaæ przy u¿yciu statycznych cz¹steczek.}
+\end{figure}
+
+\begin{figure}
+\centering
+\includegraphics[width=6cm]{water}
+\caption{Metakule zastosowane do symulacji wody. Poszczególne krople ³¹cz¹ siê ze sob¹, tworz¹c jednolity strumieñ,
+odosobnione formuj¹ kule.}
+\end{figure}
+
+
+\end{document}
