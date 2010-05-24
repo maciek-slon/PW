@@ -6,8 +6,39 @@
 #include <string>
 #include <algorithm>
 #include <sstream>
+#include <cstring>
 
 using namespace std;
+
+/*
+ * Command line parsing
+ */
+typedef std::map<std::string, std::vector<std::string> > CommandLine;
+
+
+const char SWITCH_CHAR = '-'; // lub '/'
+const CommandLine ParseCommandLine(int argc, const char* argv[])
+{
+    CommandLine cl;
+    for (int i = 1; i <argc; )
+        if (*(argv[i]) == SWITCH_CHAR)
+        {
+            std::vector<std::string> p;
+            p.reserve (argc - i);
+
+            int j;
+            for (j = i + 1;
+                j <argc && (*(argv[j]) != SWITCH_CHAR || strstr(argv[j], " "));
+                ++j)
+                p.push_back (argv[j]);
+
+            cl.insert (std::make_pair(argv[i] + 1, p));
+            i = j;
+        }
+        else
+            ++i;
+    return cl;
+}
 
 /*
  * Tokenizer
@@ -92,6 +123,8 @@ std::map <std::string, Instruction> lang;
 std::map <std::string, std::string> defs;
 // list of possible instruction types
 std::map <int, std::vector <std::string> > types;
+// list of defined labels with coresponding addresses
+std::map <std::string, int> labels;
 
 // lightweight boost-like lexical cast
 template<typename T2, typename T1>
@@ -100,7 +133,7 @@ inline T2 lexical_cast(const T1 &in) {
 	std::stringstream ss;
 	ss << in;
 	ss >> out;
-	
+
 	if (ss.fail() || !ss.eof())
 		throw in + " is not a valid integer value";
 
@@ -121,7 +154,7 @@ struct HexTo {
 // convert string to integer
 int str2int (const string &str) {
 	int n;
-	
+
 	if ( (str.length() > 1) && (str.substr(0, 2) == "0x") ) {
 		n = lexical_cast< HexTo<int> >(str);
 	} else {
@@ -148,7 +181,14 @@ std::string int2bin8(int n) {
 
 // convert string to its binary form (8 bit, U2 form)
 std::string str2bin8(const std::string & str) {
-	int n = str2int(str);
+    int n;
+    if (labels.count(str)) {
+        n = labels[str];
+        std::cout << "-- Found label: " << str << "=" << n << "\n";
+    }
+    else
+        n = str2int(str);
+
 	if ( (n > 127) || (n < -128) ) {
 		throw str + ": out of range (should be [-128..127])";
 	}
@@ -173,7 +213,14 @@ std::string int2bin16(int n) {
 
 // convert string to its binary form (16 bit, U2 form)
 std::string str2bin16(const std::string & str) {
-	int n = str2int(str);
+	int n;
+    if (labels.count(str)) {
+        n = labels[str];
+        std::cout << "-- Found label: " << str << "=" << n << "\n";
+    }
+    else
+        n = str2int(str);
+
 	if ( (n > 32767) || (n < -32768) ) {
 		throw str + ": out of range (should be [-32768..32767])";
 	}
@@ -234,7 +281,7 @@ void loadLanguageDesc(const char * fname = NULL) {
 		f >> s1 >> s2;
 		defs[s1] = s2;
 	}
-	
+
 	f >> cnt;
 	int t;
 	std::vector<std::string> tokens;
@@ -366,26 +413,26 @@ std::vector<std::string> assemblyLine(std::vector<std::string> tokens) {
 	if (types.count(ins.type) < 1) {
 		throw  mnemo + " - unknown instruction type (check language definition file)";
 	}
-	
+
 	tokens[0] = ins.opcode;
-	
-	int cnt = 0;
-	for (int i = 0; i < types[ins.type].size(); ++i) {
-		
+
+	size_t cnt = 0;
+	for (size_t i = 0; i < types[ins.type].size(); ++i) {
+
 		if (types[ins.type][i] == "0") {
 			s += "0";
 			continue;
 		}
-	
+
 		if (tokens.size() <= cnt)
 			throw  mnemo + " - to few arguments";
-			
+
 		if (types[ins.type][i] == "OPCODE") {
 			s += tokens[cnt];
 			cnt++;
 			continue;
 		}
-		
+
 		if (types[ins.type][i] == "Rd") {
 			if (defs.count(tokens[cnt]) < 1)
 				throw tokens[cnt] + " unknown. Should be register name R0..R7";
@@ -393,40 +440,26 @@ std::vector<std::string> assemblyLine(std::vector<std::string> tokens) {
 			cnt++;
 			continue;
 		}
-		
+
 		if (types[ins.type][i] == "IM8") {
 			s += str2bin8(tokens[cnt]);
 			cnt++;
 			continue;
 		}
-		
+
 		if (types[ins.type][i] == "IM16") {
 			s += str2bin16(tokens[cnt]);
 			cnt++;
 			continue;
 		}
-	}	
-	
+	}
+
 	if (tokens.size() > cnt)
 		throw  mnemo + " - to much arguments";
-	
-	for (int i = 0; i < s.length() / 8; ++i) {
+
+	for (size_t i = 0; i < s.length() / 8; ++i) {
 		ret.push_back(s.substr(i*8, 8));
 	}
-	
-/*	switch (ins.type) {
-		case 0:
-			return type0(ins, tokens);
-		case 1:
-			return type1(ins, tokens);
-		case 2:
-			return type2(ins, tokens);
-		case 3:
-			return type3(ins, tokens);
-		case 4:
-			return type4(ins, tokens);
-			break;
-	}*/
 
 	return ret;
 }
@@ -488,6 +521,15 @@ void assembly(const char * fname) {
 
 				first = false;
 			}
+
+            // label
+            if (line[line.length()-1] == ':') {
+                std::string label = strip(line.substr(0, line.length()-1));
+                cout << "-- New label: " << label << " at " << wrd << "\n";
+                std::cout << "-- " << cnt << ": " << line << "\n";
+                labels[label] = wrd;
+                continue;
+            }
 
 			Tokenizer s(line, " \t,");
 			while (s.NextToken()) {

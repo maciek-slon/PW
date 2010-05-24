@@ -3,11 +3,13 @@
 ; 	Maciej Stefanczyk
 ;	Kacper Szkudlarek
 
-; reset device
-RESET
-JMP 0x50
-LDI	R1, -14
-ADD	R2, R1, R0
-; store result in RAM
-STORE	R2, 0xf0ff
-STOP
+	IN	R0, -1
+	IN	R1, -1
+	ADD R2, R1, R0
+	OUT	R2, 0
+	IN	R1, -1
+	MUL	R3, R1, R2
+	OUT	R3, 0
+
+; stop operation
+	STOP
