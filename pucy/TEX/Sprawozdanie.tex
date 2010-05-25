@@ -1,3 +1,4 @@
+
 \documentclass[a4paper,12pt]{report}
 \usepackage{latexsym}
 \usepackage[MeX]{polski}
@@ -197,11 +198,56 @@ Interpretacja oraz wykonanie instrukcji wczytanej z pamięci. Wszystkie operandy
 Stan oczekiwania przed rozpoczęciem nowego cyklu pracy, wykorzystywany podczas zapisu wyników wykonania poprzedniej instrukcji do pamięci.
 \end{description}
 
-\section{Pamięć RAM}
+\section{Pamięci wewntętrzne}
+Do realizacji pamieci wewnętrznych zostyały wykorzystane moduly zawarte w  bobliotece LPM firmy Altery. Bilbioteka zawiera konfigorowalne definicje podtsawowych, najczęściej używanych bloków funkcjonalnych, które można zrealizować na układach FPGA.
+
+\subsection{Pamięć RAM}
+Do realizacji pamieci RAM został użytu moduł lpm\_ram\_dq. Jest to pamieć RAM z rozdzielonym wejściem i wyjściem. Może być używana jako pamięć synchroniczna lub asynchroniczna. W projekcie pamieć została zdefiniowana jako synchroniczna. Synchronizowany jest dostęp do danych, jak i szyny adresowej. Sygnałem synchronizującym operacje zapisu i odzcytu danych jest zegar systemowy. Ponieważ szyna danych, do której podłączny jest moduł, jest trójstanowa, niezbędne było także takie skonfigurwowanie elementy, by w momencie, gdy nie jest odpowiednio wysterowany do pracy, pozostawiał szynę danych wolną dla innych modułów.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=15cm]{./pict/ram.jpg}
+\caption{Przebiegi czasowe na poszczególnych liniach modułu pamięci RAM.}
+\label{fig:ram}
+\end{figure}
+
+\subsection{Pamięć ROM}
+Pamięć ROM równierz w oparciu o moduł z bibliteki LPM - lpm\_rom. Moduł może być używany zarówneo  jako pamięć synchroniczna i asynchroniczna. W projekcie pamieć zostałą użyta w postaci asynchronicznej. Sterowany jest jedynie dostęp modułu do trójstanowej szyny danych. W momencie, gdy nie następuje odczyt danych, moduł przechodzi w stan wysokiej impedancji, pozostawiajać wolny dostęp do szyny danych.
+W symulacji przedstawionej poniżej~\ref{fig:rom} użytu został następujący plik konfiguracujny zawartosci pamięci:
+
+\begin{lstlisting}[caption=Plik wynikowy dla symulacji~\ref{fig:rom},language=ahdl]
+
+WIDTH = 8;
+DEPTH = 32;
+
+ADDRESS_RADIX = HEX;
+DATA_RADIX = BIN;
+
+CONTENT BEGIN
+	0 : 01010000;
+	1 : 10101010; -- R0 <= 0xAA
+	2 : 01010001;
+	3 : 00000001; -- R1 <= 0x01
+	4 : 00100010;
+	5 : 00000001; -- R2 <= R0 + R1 = 0xAB
+	6 : 00100000;
+	7 : 00100001; -- R0 <= R2 + R1 = 0xAC
+	8 : 00000000; -- STOP
+END;
 
 
-\section{Pamięć ROM}
+END;
+\end{lstlisting}
+\lstset{
+tabsize=4
+}
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=15cm]{./pict/rom.jpg}
+\caption{Przebiegi czasowe na poszczególnych liniach modułu pamięci ROM.}
+\label{fig:rom}
+\end{figure}
 
 \section{Moduł operacji złożonej -- mnożenie Bootha}
 
@@ -229,7 +275,9 @@ Algorytm polega na sukcesywnym dodawaniu do sumy częściowej P jednej z dwóch 
 
 W projekcie mnożenie zostało zrealizowane jako osobny blok funkcjonalny, do którego podawane są mnożna i mnożnik. Blok ten posiada własny sygnał WAIT oznaczający trwające obliczenia, a po ich zakończeniu wynik jest udostępniany przy pomocy odpowiednich sygnałów. Obie liczby na wejściu muszą być tej samej długości (w projekcie przyjęto n=8, ale łatwo jest to zmienić), wynik natomiast jest dwukrotnie dłuższy (ze względu na architekturę projektowanego mikrokontrolera odczytywane jest tylko 8 młodszych bitów).
 
-\section{Układ wejścia -- klawiatura PS/2}
+\section{Moduł wejścia -- klawiatura PS/2}
+
+Moduł odpowiada za komunikację układu z urządzeniami zewnętrznymi za pomocą portu PS2. Transmisja danych przychodzących synchronizowana jest poprzez zewnętrzny zegar (ok. 15 kHz) dostarczany przez urządzenie komunikujące się z układem. Wewnętrzna struktura modułu oparta jest o maszynę stanów taktowana wewnętrznym sygnałem (ok. 20 MHz).  Maszyna stanów bada kolejność wprowadzanych znaków, jeżeli jest poprawna, wprowadzana liczba konwertowana jest na U2. Konwersja odbywa się poprzez sumowanie odpowiednio przemnożonych kolejnych cyfr dziesiętnych wprowadzanej liczby i odpowiednie ustawienie bitu znaku, jeżeli liczba należy do przedziału [-128; 127]
 
 \begin{figure}[h]
 \centering
@@ -238,13 +286,42 @@ W projekcie mnożenie zostało zrealizowane jako osobny blok funkcjonalny, do kt
 \label{fig:ps2}
 \end{figure}
 
-\section{Układ wyjścia -- drukarka LPT}
+\begin{figure}[h]
+\centering
+\includegraphics[width=11cm]{./pict/PS2_sim.png}
+\caption{Przebiegi czasowe na liniach modułu PS2.}
+\label{fig:ps2_sim}
+\end{figure}
+
+\section{Moduł wyjścia -- drukarka LPT}
+Moduł odpowiada za komunikację z urządzeniami zewnętrznymi przy użyciu portu LPT. Moduł oparty jest o maszynę stanów taktowaną wewnętrznym zegarem (ok. 20 MHz). Poszczególne stany automatu odpowiadają etapom transmisji danych poprzez łącze równoległe. Moduł korzysta z opisanego poniżej modułu służącego do konwersji liczb z postaci U2 do BCD. Transmisja danych opiera się o wystawianie i utrzymywanie sygnałów sterujących zgodnie wymogami czasowymi transmisjiu~\ref{fig:lpt} , a także badanie stanu linii sterujących wejściowych. Moduł dokonuje także zamiany poszczególnych znaków liczby w postaci BCD na ich odpowiedniki w kodzie ASCII, którą są następnie wysyłane do urządzenia zewnętrznego (np. drukarki).
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=8cm]{./pict/LPT.png}
 \caption{Przebiegi czasowe na najważniejszych liniach portu LPT podczas wysyłania danych.}
 \label{fig:lpt}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=11cm]{./pict/LPT_sim.png}
+\caption{Przebiegi czasowe na liniach modułu LPT.}
+\label{fig:lpt_sim}
+\end{figure}
+
+\subsection{Moduł zamiany liczb U2 na BCD}
+
+Pierwszym krokiem konwersji liczb jest sprawdzenie i zapisanie znaku liczby w kodzie U2 i zamiana jej wartości bezwzględnej na liczbę w postaci NKB. Liczba z postaci NKB do postaci BCD konwertowana jest za pomocą algorytmu Shitf and Add 3 . Ogólna zasada działania algorytmu opiera się na stworzeniu bufora odpowiadającego sumarycznej wielkości znaków wyjściowych (u nasz 10 bit, po 4 bit na dziesiątki i jedności, 2 bity na cyfrę setek) i odpowiednim wsuwaniu z prawej strony liczby binarnej i testowaniu jej wartości. Jeżeli wartość kolumnie odpowiadającej którejś z cyfr liczby dziesiętnej jest większa bądź równa 5 to do tej kolumny dodajemy 3. Po wsunięciu wszystkich bitów konwertowanej liczby algorytm się kończy. W każdej z kolumn otrzymujemy wartość binarnie zapisaną wartość dziesiętną danej cyfry.
+
+\section{Moduł testowy - wyświetlacz siedio segmentowy}
+W czasie testowania stworzonego mikrokontrolera powstał jeszcze jedne dodatkowy moduł testowy. Pozwala on na wyprowadzanie na dwucyfrowy wyświetlacz 7-segmentowy aktualnej zawartości lini danych.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=11cm]{./pict/BCD_sim.png}
+\caption{Przebiegi czasowe na liniach modułu LPT.}
+\label{fig:lBCD_sim}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
