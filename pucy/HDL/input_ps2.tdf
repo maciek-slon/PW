@@ -1,4 +1,4 @@
-TITLE "Uk³ad wejœciowy mikroprocesoara - PS2";
+TITLE "Uklad wejsciowy mikroprocesoara - PS2";
 
 constant addr = B"00000000";
 
@@ -18,24 +18,24 @@ subdesign input_ps2(
 	PS2_WT : output;
 
 	
-	PS2_IN_DATA : input;	%Dane przychodz¹ce z ³¹cza PS2 %
-	PS2_IN_CLK : input;		%Sygna³ synchornizuj¹cy przychodz¹ce dane %
+	PS2_IN_DATA : input;	%Dane przychodzace z lacza PS2 %
+	PS2_IN_CLK : input;		%Sygnal synchornizujacy przychodzace dane %
 
 )
 
 variable
-	AUT : machine of bits (Q[3..0]) %Automat obs³uguj¹cy komunikacjê%
+	AUT : machine of bits (Q[3..0]) %Automat obslugujacy komunikacje%
 			with states (START = 0, S0 = 1, S1 = 2, S2 = 3, S3 = 4, S4 = 5, S5 = 6, S6 = 7, S7 = 8);
-	--DATA[7..0] : DFF;	%Dane ca³kowicie odczytane z portu%
+	--DATA[7..0] : DFF;	%Dane calkowicie odczytane z portu%
 	REJ[7..0] : DFF;	%Dane odczytywane z portu%
-	PAR : DFF;			%Badanie parzystoœci%
+	PAR : DFF;			%Badanie parzystosci%
 	
 	--PS2_DATA[7..0] : DFF;	
 	TMP_DATA[7..0] : DFF;
 
 	PS2_CLK : DFF;
-	CNT[3..0] : DFF;	%Licznik iloœci odczytancyh bitów%
-	OK : DFF;			%Czy dane s¹ poprawne%
+	CNT[3..0] : DFF;	%Licznik ilosci odczytancyh bitow%
+	OK : DFF;			%Czy dane sa poprawne%
 	SH : DFF; %czy wyswietlono%
 	
 	NUM[1..0] : DFF;
@@ -46,7 +46,7 @@ variable
 
 begin
 
-	%Podpiêcie zegara do poszczególnych elementów%
+	%Podpiecie zegara do poszczegolnych elementow%
 	REJ[].clk = PS2_GEN;
 	PS2_CLK.clk = PS2_GEN;
 	CNT[].clk= PS2_GEN;
@@ -61,7 +61,7 @@ begin
 	TMP_DATA[].clk = PS2_GEN;
 	
 	
-	%Podpiêcie sygna³u resetu%
+	%Podpiecie sygnalu resetu%
 	REJ[].clrn = PS2_CR;
 	PS2_CLK.clrn = PS2_CR;
 	CNT[].clrn = PS2_CR;

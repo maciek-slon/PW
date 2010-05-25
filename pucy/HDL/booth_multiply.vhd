@@ -1,7 +1,7 @@
 -------------------------------------
 -- MNOZARKA
 -------------------------------------
--- Ÿród³o:
+-- zrodlo:
 --   http://en.wikipedia.org/wiki/Booth's_multiplication_algorithm
 -------------------------------------
 
@@ -14,14 +14,14 @@ entity booth_multiply is
 generic (n : positive := 8);
 port ( M, R: in std_logic_vector (n - 1 downto 0); --liczby do pomnozenia
 		WYN: out std_logic_vector (2*n - 1 downto 0); --wynik mnozenia
-		MUL_WT : out std_ulogic; -- sygna³ trwania przetwarzania
-		MUL_GEN: in std_ulogic;-- sygna³ zegarowy
-		MUL_CR : in std_ulogic; -- sygna³ reset  
+		MUL_WT : out std_ulogic; -- sygnal trwania przetwarzania
+		MUL_GEN: in std_ulogic;-- sygnal zegarowy
+		MUL_CR : in std_ulogic; -- sygnal reset  
 		MUL : in std_ulogic);
 end entity booth_multiply;
 
 architecture booth_multiply_arch of booth_multiply is 
-shared variable A, S, P : std_logic_vector(2*n downto 0); -- d³ugoœæ 2n+1
+shared variable A, S, P : std_logic_vector(2*n downto 0); -- dlugosc 2n+1
 shared variable Z1 : std_logic_vector(n downto 0);
 shared variable Z2 : std_logic_vector(n-1 downto 0);
 shared variable MM : std_logic_vector(n-1 downto 0);

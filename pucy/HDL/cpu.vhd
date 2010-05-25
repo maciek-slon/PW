@@ -39,7 +39,7 @@ END COMPONENT booth_multiply;
 type stany is (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST_WAIT);
 shared variable STAN : stany;
 
--- sterowanie pamiêci¹ rejestrów
+-- sterowanie pamiecia rejestrow
 shared variable REG_A : std_logic_vector (2 downto 0);
 shared variable REG_D : std_logic_vector (2 downto 0);
 shared variable D_A : std_logic_vector (7 downto 0);
@@ -69,7 +69,7 @@ shared variable B_M : std_logic;
 shared variable M_WT : std_logic;
 shared variable M_WY : std_logic_vector (7 downto 0);
 
--- flaga ustawiana po instrukcji STOP, zawiesza dzia³anie procesora
+-- flaga ustawiana po instrukcji STOP, zawiesza dzialanie procesora
 shared variable STOP : std_logic;
 
 -- program counter
@@ -152,7 +152,7 @@ regA: lpm_ram_dp
 p0:	process (CPU_GEN, CPU_CR) is
 	begin
 		if(CPU_CR = '0') then
-			PC := 0; -- pocz¹tek adresów pamiêci ROM
+			PC := 0; -- poczatek adresow pamieci ROM
 			CNT := "00";
 			CPU_DATA <= (others => 'Z');
 			CPU_RD <= '1';
@@ -165,7 +165,7 @@ p0:	process (CPU_GEN, CPU_CR) is
 			
 			case STAN is
 			
-				when ST0 => --jeœli PC < od 32 (max pamieci), odczyt instrukcji z ROM
+				when ST0 => --jesli PC < od 32 (max pamieci), odczyt instrukcji z ROM
 					IF (STOP = '1') THEN
 						STAN := ST0;
 					ELSE
@@ -189,7 +189,7 @@ p0:	process (CPU_GEN, CPU_CR) is
 						DELAY := "000";
 					END IF;
 					
-				when ST2 => -- wstêpne pobranie instrukcji i operandów
+				when ST2 => -- wstepne pobranie instrukcji i operandow
 					case CNT is
 						when "00" => 
 							IC1 := CPU_DATA; 

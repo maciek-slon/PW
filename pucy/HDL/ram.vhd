@@ -30,7 +30,7 @@ f0: lpm_ram_dq
 		port map (	address => RAM_ADDR(7 downto 0), q => DOUT, 
 					data => RAM_DATA, we => (not RAM_WR) and (not RAM_MREQ) and ENAB , inclock => RAM_GEN, outclock => RAM_GEN);	
 
-	--Ustawianie szyny danych w stan wysokiej impedancji, gdy nie jest u¿ywana
+	--Ustawianie szyny danych w stan wysokiej impedancji, gdy nie jest uzywana
 	RAM_DATA <= DOUT when ((not RAM_RD) and (not RAM_MREQ) and ENAB) = '1'
 				else (others => 'Z');
 				

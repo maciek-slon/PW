@@ -1,4 +1,4 @@
-TITLE "Uk³ad wyjœciowy portu LPT";
+TITLE "Uklad wyjsciowy portu LPT";
 
 include "u2tobcd.inc";
 
@@ -84,7 +84,7 @@ begin
 	BCD_MOD.GEN = LPT_GEN;
 
 	case (AUT) is
-		%Czekamy na wystawienie adresu i danych na szynê%
+		%Czekamy na wystawienie adresu i danych na szyne%
 		when S0 =>	CNT[] = 0; LPT_OUT_DATA[] = 0; NUM[] = 0; LPT_STROBE = VCC;
 					
 					if(!LPT_IOREQ & !LPT_WR & (LPT_ADDR[] == addr)) then
@@ -152,7 +152,7 @@ begin
 					else 
 						AUT = S4;
 					end if;
-		%Drukarka zakoñczy³¹ przetwarzanie%
+		%Drukarka zakonczyla przetwarzanie%
 		when S4	=>	LPT_OUT_DATA[] = LPT_OUT_DATA[]; NUM[] = NUM[]; LPT_WT = VCC;
 					SIGN = SIGN; HUNDS[] = HUNDS[]; TENS[] = TENS[]; UNITS[] = UNITS[];		
 					LPT_STROBE = VCC;
