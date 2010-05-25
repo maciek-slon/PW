@@ -85,11 +85,72 @@ SOFT,STATES,SUBDESIGN,TABLE,TFF,TFFE,THEN,TITLE,TRI,VARIABLE,VCC,WHEN,WITH,X,XNO
 
 \section{Treść zadania}
 
-Tutaj trzeba wstawić treść naszego zadanka ;-)
+Zadanie polegało na zaprojektowaniu 8-bitowego mikrokontrolera ogólnego przeznaczenia, wyposażonego w kilka wbudowanych podzespołów (pamięć ROM, pamięć RAM, układ wejściowy wczytujący dane z klawiatury, układ wyjściowy drukujący dane na drukarce) oraz umożliwiającego podłączanie kolejnch podzespołów poprzez wyprowadzoną na zewnątrz szynę systemową. Bloki funkcjonalne mikrokontrolera powinny być zaprojektowane jako niezależne elementy współpracujące ze sobą za pośrednictwem wewnętrznej, trójstanowej szyny systemowej.
 
 \section{Założenia projektowe}
+Dane wejściowe i wyjściowe wprowadzane i wypisywane są w postaci 4 znaków ASCII w postaci ZDDD, wyznaczających wartość dziesiętną ze znakiem z przedziału [-128, +127]. Dane na wejściu podawane są bez błędów, jednak mimo tego zabezpieczyliśmy się przed podaniem liczb spoza zakresu.
 
-Założenia projektowe które przyjeliśmy
+\subsubsection{Zestaw instrukcji}
+Procesor powinien obsługiwać następujący zestaw poleceń: (patrz też:~\ref{sec:asmex})
+\begin{itemize}
+\item Instrukcje sterujące
+\begin{description}
+\item[STOP] \hfill \\
+Zatrzymanie wykonywania programu, wyjście z tego stanu możliwe jedynie przez reset układu.
+\item[RESET] \hfill \\
+Powrót programu do pierwszej instrukcji. $PC <= 0$
+\item[JMP A] \hfill \\
+Skok bezwarunkowy pod adres A (8 bitów). $PC <= A$
+\item[JZ Rd A] \hfill \\
+Skok warunkowy pod adres A. $Rd == 0 => PC <= A$
+\end{description}
+
+\item Operacje arytmetyczne i logiczne
+\begin{description}
+\item[ADD Rd, Ra, Rb] \hfill \\
+Dodawanie. $Rd <= Ra + Rb$
+\item[SUB Rd, Ra, Rb] \hfill \\
+Odejmowanie. $Rd <= Ra - Rb$
+\item[MUL Rd, Ra, Rb] \hfill \\
+Mnożenie (wykonywane metodą Bootha). $Rd <= Ra * Rb$
+\item[AND Rd, Ra, Rb] \hfill \\
+Iloczyn bitowy. $Rd <= Ra and Rb$
+\item[OR Rd, Ra, Rb] \hfill \\
+Suma bitowa. $Rd <= Ra or Rb$
+\end{description}
+
+\item Operacje na pamięci oraz wejścia/wyjścia
+\begin{description}
+\item[LDI Rd, D] \hfill \\
+Załadowanie wartości do rejestru Rd. $Rd <= D$
+\item[LD Rd, Ra, Rb] \hfill \\
+Wczytanie danych z pamięci spod adresu wskazywanego przez rejestry Ra i Rb. $Rd <= (RaRb)$
+\item[STORE Rd, A] \hfill \\
+Zapisanie zawartości rejestru Rd do pamięci pod adres A (16-bitowy). $Rd => (A)$
+\item[IN Rd, A] \hfill \\
+Wczytanie do rejestru Rd danych z urzadzenia wejściowego o adresie A (8-bitowy). $Rd <= IN(A)$
+\item[OUT Rd, A] \hfill \\
+Wyprowadzenie zawartości rejestru Rd do urzadzenia wyjściowego o adresie A (8-bitowy). $Rd => OUT(A)$
+\end{description}
+
+\end{itemize}
+
+Wszystkie operacje wykonywane są na liczbach 8-bitowych zapisanych w kodzie U2.
+
+Mikrokontroler posiada 8 rejestrów ogólnego przeznaczenia (R0..R7).
+
+\subsubsection{Szyna systemowa}
+
+Szyna systemowa składa się z 3 grup sygnałów: linii adresowych (16 bitów), linii danych (8 bitów) oraz sygnałów sterujących, które dokładniej opisane są niżej.
+\begin{description}
+\item[/RD] Sygnał żądania odczytu danych
+\item[/WR] Sygnał żądania zapisu danych
+\item[/MREQ] Sygnał żądania dostępu do przestrzeni adresowej pamięci (16 bitów)
+\item[/IOREQ] Sygnał żądania dostępu do przestrzeni adresowej wejścia/wyjścia (8 bitów)
+\item[WT] Sygnał oczekiwania sygnalizujący trwającą operację, procesor powinien zaczekać
+\end{description}
+
+Dodatkowo do każdego komponentu doprowadzone są sygnały GEN (zegar systemowy 40MHz) oraz CR (asynchroniczne zerowanie układu).
 
 \section{Schemat blokowy układu}
 
@@ -245,11 +306,12 @@ Komentarze dostępne są jedynie w wersji całej linii (linia komentarza powinna
 
 \section{Przykłady}
 
+\label{sec:asmex}
 \subsubsection{Assembler dla procesora z projektu}
 \lstset{
 tabsize=6
-}
-\begin{lstlisting}[caption=Definicja języka,language=]
+}\begin{lstlisting}[caption=Definicja języka,language=]
+
 14
 00000	STOP	0
 00001	RESET	0
