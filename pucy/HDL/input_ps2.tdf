@@ -1,12 +1,14 @@
 TITLE "Uk³ad wejœciowy mikroprocesoara - PS2";
 
-constant addr = B"11111111";
+constant addr = B"00000000";
 
 
 subdesign input_ps2(
 	PS2_DATA[7..0] : bidir;	%Szyna danych %
 	PS2_GEN : input;	%Zegar ok. 20 MHz%
 	PS2_CR : input;
+	
+	--PS2_OUT[7..0] : output;
 	
 	
 	PS2_ADDR[7..0] : input;
@@ -24,7 +26,7 @@ subdesign input_ps2(
 variable
 	AUT : machine of bits (Q[3..0]) %Automat obs³uguj¹cy komunikacjê%
 			with states (START = 0, S0 = 1, S1 = 2, S2 = 3, S3 = 4, S4 = 5, S5 = 6, S6 = 7, S7 = 8);
-	DATA[7..0] : DFF;	%Dane ca³kowicie odczytane z portu%
+	--DATA[7..0] : DFF;	%Dane ca³kowicie odczytane z portu%
 	REJ[7..0] : DFF;	%Dane odczytywane z portu%
 	PAR : DFF;			%Badanie parzystoœci%
 	
@@ -38,14 +40,13 @@ variable
 	
 	NUM[1..0] : DFF;
 	READ : DFF;
-	OUT[7..0] : DFF;
+	OUT[9..0] : DFF;
 	TCNT[2..0] : DFF;
 	SIGN : DFF;
 
 begin
 
 	%Podpiêcie zegara do poszczególnych elementów%
-	DATA[].clk = PS2_GEN;
 	REJ[].clk = PS2_GEN;
 	PS2_CLK.clk = PS2_GEN;
 	CNT[].clk= PS2_GEN;
@@ -57,11 +58,10 @@ begin
 	OUT[].clk = PS2_GEN;
 	TCNT[].clk = PS2_GEN;
 	SIGN.clk = PS2_GEN;
-	--TMP_DATA[].clk = PS2_GEN;
+	TMP_DATA[].clk = PS2_GEN;
 	
 	
 	%Podpiêcie sygna³u resetu%
-	DATA[].clrn = PS2_CR;
 	REJ[].clrn = PS2_CR;
 	PS2_CLK.clrn = PS2_CR;
 	CNT[].clrn = PS2_CR;
@@ -73,22 +73,17 @@ begin
 	OUT[].clrn = PS2_CR;
 	TCNT[].clrn = PS2_CR;
 	SIGN.clrn = PS2_CR;
-	TMP_DATA[] = PS2_CR;
+	TMP_DATA[].clrn = PS2_CR;
 	
 	SH = !SH;
 
-	--PS2_DATA[].clk = PS2_GEN;
-
 	NUM[].clk = PS2_GEN;
-
-	--PS2_DATA[].clrn = PS2_CR;
-
 	NUM[].clrn = PS2_CR;	
 	
 	
 	PS2_CLK = PS2_IN_CLK;
 
-	
+	--Ustawianie szyny w stan wysokiej impedancji
 	PS2_DATA[0] = TRI(TMP_DATA[0], !PS2_IOREQ & !PS2_RD & (PS2_ADDR[] == addr) );
 	PS2_DATA[1] = TRI(TMP_DATA[1], !PS2_IOREQ & !PS2_RD & (PS2_ADDR[] == addr));
 	PS2_DATA[2] = TRI(TMP_DATA[2], !PS2_IOREQ & !PS2_RD & (PS2_ADDR[] == addr));
@@ -99,7 +94,7 @@ begin
 	PS2_DATA[7] = TRI(TMP_DATA[7], !PS2_IOREQ & !PS2_RD & (PS2_ADDR[] == addr));
 	
 	case AUT is
-		when START => 					
+		when START => TMP_DATA[] = TMP_DATA[];					
 					if(!PS2_IOREQ & !PS2_RD & (PS2_ADDR[] == addr)) then
 						PS2_WT = VCC;
 						AUT = S0;
@@ -107,7 +102,7 @@ begin
 						PS2_WT = GND;
 						AUT = START;
 					end if;
-		when S0	=>	TMP_DATA[] = TMP_DATA[]; DATA[] = DATA[]; PAR = GND; CNT[] = 0; REJ[] = 0; OK = OK; READ = READ; OUT[] = OUT[];
+		when S0	=>	TMP_DATA[] = TMP_DATA[]; PAR = GND; CNT[] = 0; REJ[] = 0; OK = OK; READ = READ; OUT[] = OUT[];
 					PS2_WT = VCC;
 					TCNT[] = TCNT[]; SIGN = SIGN;
 					if (!PS2_CLK & !PS2_IN_DATA) then
@@ -115,7 +110,7 @@ begin
 						AUT = S2;
 					else AUT = S0;
 					end if;
-		when S1	=>	TMP_DATA[] = TMP_DATA[]; DATA[] = DATA[]; OK = OK; READ = READ;  OUT[] = OUT[];
+		when S1	=>	TMP_DATA[] = TMP_DATA[]; OK = OK; READ = READ;  OUT[] = OUT[];
 					TCNT[] = TCNT[]; SIGN = SIGN; PS2_WT = VCC;
 					if(CNT[] < 8) then
 						REJ[] = (PS2_IN_DATA, REJ[7..1]);
@@ -131,11 +126,11 @@ begin
 						AUT = S4;
 					end if;
 					CNT[] = CNT[] + 1;	
-		when S2	=>	TMP_DATA[] = TMP_DATA[]; DATA[] = DATA[]; PAR = PAR; CNT[] = CNT[]; REJ[] = REJ[]; OK = OK; READ = READ; OUT[] = OUT[];
+		when S2	=>	TMP_DATA[] = TMP_DATA[]; PAR = PAR; CNT[] = CNT[]; REJ[] = REJ[]; OK = OK; READ = READ; OUT[] = OUT[];
 					TCNT[] = TCNT[]; SIGN = SIGN; PS2_WT = VCC;
 					if (PS2_CLK == VCC) then AUT = S3; 
 					else AUT = S2; end if;
-		when S3	=>	TMP_DATA[] = TMP_DATA[]; DATA[] = DATA[]; PAR = PAR; CNT[] = CNT[]; REJ[] = REJ[]; OK = OK; READ = READ; OUT[] = OUT[];
+		when S3	=>	TMP_DATA[] = TMP_DATA[]; PAR = PAR; CNT[] = CNT[]; REJ[] = REJ[]; OK = OK; READ = READ; OUT[] = OUT[];
 					TCNT[] = TCNT[]; SIGN = SIGN; PS2_WT = VCC;
 					if (PS2_CLK == GND) then AUT = S1;  
 					else AUT = S3; end if;
@@ -163,7 +158,6 @@ begin
 							SIGN = SIGN;
 							TCNT[] = TCNT[];
 							AUT = S0;
-							DATA[] = DATA[];
 							IF (REJ[] == X"F0") THEN
 								READ = VCC;
 							ELSE
@@ -175,7 +169,7 @@ begin
 						 TCNT[] = TCNT[];
 						 SIGN = SIGN;
 					end if;
-		when S5	=>	TMP_DATA[] = TMP_DATA[]; DATA[] = DATA[]; REJ[] = REJ[]; SIGN = SIGN; PS2_WT = VCC;
+		when S5	=>	TMP_DATA[] = TMP_DATA[]; REJ[] = REJ[]; SIGN = SIGN; PS2_WT = VCC;
 					if(REJ[] == 14) then
 						OUT[] = 0;
 						TCNT[] = 0;
@@ -185,9 +179,9 @@ begin
 					else
 						CASE TCNT[] IS
 							WHEN 0 => OUT[] = 0; TCNT[] = 1;
-							WHEN 1 => OUT[] = (REJ[1..0], 0, 0, 0, 0, 0, 0) + (REJ[2..0], 0, 0, 0, 0, 0) + (REJ[5..0], 0, 0); TCNT[] = 2;
-							WHEN 2 => OUT[] = OUT[] + (REJ[4..0], 0, 0, 0) + (REJ[6..0], 0); TCNT[] = 3;
-							WHEN 3 => OUT[] = OUT[] + REJ[]; 
+							WHEN 1 => OUT[] = (REJ[3..0], 0, 0, 0, 0, 0, 0) + (REJ[4..0], 0, 0, 0, 0, 0) + (REJ[7..0], 0, 0); TCNT[] = 2;
+							WHEN 2 => OUT[] = OUT[] + (REJ[6..0], 0, 0, 0) + (0, REJ[7..0], 0); TCNT[] = 3;
+							WHEN 3 => OUT[] = OUT[] + (0, 0, REJ[]); 
 						END CASE;
 					end if;
 					
@@ -196,7 +190,7 @@ begin
 					else
 						AUT = S0;
 					end if;
-		when S6 => SIGN = SIGN; OUT[] = OUT[]; PS2_WT = VCC;
+		when S6 => SIGN = SIGN; PS2_WT = VCC;
 					if(SIGN == VCC) then
 						if(OUT[] > 128) then
 							TCNT[] = 0;
@@ -204,7 +198,8 @@ begin
 							TMP_DATA[] = 0;
 							AUT = S0;
 						else
-							TMP_DATA[] = -OUT[];
+							TMP_DATA[] = -OUT[7..0];
+							OUT[] = OUT[];
 							AUT = S7;
 						end if;
 					else
@@ -214,11 +209,11 @@ begin
 							TMP_DATA[] = 0;
 							AUT = S0;
 						else
-							TMP_DATA[] = OUT[];
+							TMP_DATA[] = OUT[7..0];
+							OUT[] = OUT[];
 							AUT = S7;
 						end if;
 					end if;
-					--AUT = S7;
 		when S7	=> 	OUT[] = OUT[]; TMP_DATA[] = TMP_DATA[]; PS2_WT = GND;
 					if(!PS2_IOREQ & !PS2_RD) then
 						AUT = S7;

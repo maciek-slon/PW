@@ -1,5 +1,6 @@
 -------------------------------------
 -- ROM
+-- pamiec dostepna pod adresami 0x000 - 0x0FF
 -------------------------------------
 
 library ieee;
@@ -17,16 +18,18 @@ port (	R_GEN : in std_logic;
 end entity rom;
 
 architecture pamiec_ROM of rom is
-shared variable DOUT : std_logic_vector (7 downto 0);
-shared variable ADR : std_logic_vector (4 downto 0);
+signal ENAB : std_logic;
 
 begin
 
 e0: lpm_rom
-	generic map(LPM_WIDTH => 8, LPM_WIDTHAD => 5, LPM_NUMWORDS => 32,
+	generic map(LPM_WIDTH => 8, LPM_WIDTHAD => 8, LPM_NUMWORDS => 256,
 				LPM_FILE=>"none.mif",
 				LPM_OUTDATA => "UNREGISTERED",
 				LPM_ADDRESS_CONTROL => "UNREGISTERED", LPM_HINT=>"UNUSED")
-	port map (	address => R_ADDR(4 downto 0), q => R_DATA, memenab=> (not R_RD) and R_ADDR(5) and (not R_MREQ));
+	port map (	address => R_ADDR(7 downto 0), q => R_DATA, memenab=> (not R_RD) and ENAB and (not R_MREQ));
+
+	ENAB <= '1' when (R_ADDR(15 downto 8) = x"00")
+			else '0';
 
 end architecture pamiec_ROM;

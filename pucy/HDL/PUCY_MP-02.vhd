@@ -26,7 +26,10 @@ port (	CR : in std_logic;
 		AUTOFD : OUT STD_LOGIC;
 		
 		IN_DATA : in std_logic;
-		IN_CLK: in std_logic);		
+		IN_CLK: in std_logic;
+		
+		DBG_OUT : out std_logic_vector (7 downto 0);
+		OUT_SEG : out std_logic_vector (7 downto 0));		
 end entity PUCY_MP_02;
 
 architecture PUCY_MP_02 of PUCY_MP_02 is
@@ -44,6 +47,7 @@ COMPONENT input_ps2 is
 		PS2_WT		:	 OUT STD_LOGIC;
 		PS2_IN_DATA	:	 IN STD_LOGIC;
 		PS2_IN_CLK	:	 IN STD_LOGIC
+		--PS2_OUT		:	 out STD_LOGIC_VECTOR(7 DOWNTO 0) 	
 	);
 END COMPONENT input_ps2;
 
@@ -107,6 +111,20 @@ COMPONENT cpu is
 	);
 END COMPONENT cpu;
 
+COMPONENT seg is
+	PORT
+	(
+		SEG_CR		:	 IN STD_LOGIC;
+		SEG_GEN		:	 IN STD_LOGIC;
+		SEG_DATA	:	 IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+		SEG_ADDR	:	 IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+		SEG_MREQ	:	 IN STD_LOGIC;
+		SEG_WR		:	 IN STD_LOGIC;
+		SEG_RD		:	 IN STD_LOGIC;
+		SEG_OUT		:	 OUT STD_LOGIC_VECTOR(7 DOWNTO 0)
+	);
+END COMPONENT seg;
+
 --signal DATA 	: std_logic_vector (7 downto 0);
 --signal ADDR 	: std_logic_vector (15 downto 0);
 --signal MREQ 	: std_logic;
@@ -119,6 +137,7 @@ shared variable OUT_WT : std_logic;
 shared variable IN_WT : std_logic;
 
 
+
 begin
 rom0: rom port map (R_GEN => GEN,   R_DATA => DATA,   R_ADDR => ADDR,   R_MREQ => MREQ,                 R_RD => RD);
 ram0: ram port map (RAM_GEN => GEN, RAM_DATA => DATA, RAM_ADDR => ADDR, RAM_MREQ => MREQ, RAM_WR => WR, RAM_RD => RD);
@@ -127,8 +146,11 @@ lpt0: output_lpt port map (LPT_ADDR => ADDR(7 downto 0), LPT_DATA => DATA, LPT_I
 							LPT_ACK => ACK, LPT_STROBE => STROBE, LPT_SELECTLN => SELECTLN,  LPT_SEL => SEL, 
 							LPT_INIT => INIT, LPT_AUTOFD => AUTOFD, LPT_WT => OUT_WT);
 ps20: input_ps2 port map (	PS2_DATA => DATA, PS2_GEN => GEN, PS2_CR => CR, PS2_ADDR => ADDR(7 downto 0),
-							PS2_IOREQ => IOREQ, PS2_RD => RD, PS2_WR => WR, PS2_WT => IN_WT, PS2_IN_DATA => IN_DATA, PS2_IN_CLK => IN_CLK);
+							PS2_IOREQ => IOREQ, PS2_RD => RD, PS2_WR => WR, PS2_WT => IN_WT, PS2_IN_DATA => IN_DATA,
+							PS2_IN_CLK => IN_CLK);
 cpu0: cpu port map(	CPU_CR => CR, CPU_GEN => GEN, CPU_DATA => DATA, CPU_ADDR => ADDR, CPU_MREQ => MREQ, CPU_IOREQ => IOREQ,
 					CPU_RD => RD, CPU_WR => WR, CPU_WT => OUT_WT or IN_WT);
+seg0: seg port map(	SEG_CR => CR, SEG_GEN => GEN, SEG_DATA => DATA, SEG_ADDR => ADDR,
+					SEG_MREQ => MREQ, SEG_WR => WR, SEG_RD => RD, SEG_OUT => OUT_SEG);
 
 end architecture PUCY_MP_02;

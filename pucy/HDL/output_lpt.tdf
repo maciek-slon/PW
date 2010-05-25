@@ -85,7 +85,7 @@ begin
 
 	case (AUT) is
 		%Czekamy na wystawienie adresu i danych na szynê%
-		when S0 =>	CNT[] = 0; LPT_OUT_DATA[] = 0; NUM[] = 0;
+		when S0 =>	CNT[] = 0; LPT_OUT_DATA[] = 0; NUM[] = 0; LPT_STROBE = VCC;
 					
 					if(!LPT_IOREQ & !LPT_WR & (LPT_ADDR[] == addr)) then
 						LPT_WT = VCC;
@@ -117,24 +117,12 @@ begin
 									NUM[] = 1;
 									AUT = S2;
 									
-						when 1 	=> 	--if(HUNDS[] != 0) then
-									LPT_OUT_DATA[] = (B"000000", HUNDS[]) + 48;
-									--DATA[] = DATA[] + 48;
-									AUT = S2;
-									--else
-									--AUT = S1;
-									--end if;
+						when 1 	=> 	LPT_OUT_DATA[] = (B"000000", HUNDS[]) + 48;
 									NUM[] = 2;
-						when 2 	=> 	--if(TENS[] != 0 ) then
-									LPT_OUT_DATA[] = (B"0000", TENS[]) + 48;
-										--DATA[] = DATA[] + 48; 
+						when 2 	=> 	LPT_OUT_DATA[] = (B"0000", TENS[]) + 48;
 									AUT = S2;
-									--else
-									--	AUT = S1;
-									--end if;
 									NUM[] = 3;
 						when 3	=>	LPT_OUT_DATA[] = (B"0000", UNITS[]) + 48;
-									--DATA[] = DATA[] + 48;
 									NUM[] = 4;
 									AUT = S2;
 						when 4 	=>	LPT_OUT_DATA[] = 13;
