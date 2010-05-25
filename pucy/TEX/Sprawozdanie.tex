@@ -1,4 +1,3 @@
-
 \documentclass[a4paper,12pt]{report}
 \usepackage{latexsym}
 \usepackage[MeX]{polski}
@@ -198,6 +197,8 @@ Interpretacja oraz wykonanie instrukcji wczytanej z pamięci. Wszystkie operandy
 Stan oczekiwania przed rozpoczęciem nowego cyklu pracy, wykorzystywany podczas zapisu wyników wykonania poprzedniej instrukcji do pamięci.
 \end{description}
 
+Kod modułu został umieszczony na listingu~\ref{lst_cpu}.
+
 \section{Pamięci wewntętrzne}
 Do realizacji pamieci wewnętrznych zostyały wykorzystane moduly zawarte w  bobliotece LPM firmy Altery. Bilbioteka zawiera konfigorowalne definicje podtsawowych, najczęściej używanych bloków funkcjonalnych, które można zrealizować na układach FPGA.
 
@@ -211,11 +212,13 @@ Do realizacji pamieci RAM został użytu moduł lpm\_ram\_dq. Jest to pamieć RA
 \label{fig:ram}
 \end{figure}
 
+Kod modułu został umieszczony na listingu~\ref{lst_ram}.
+
 \subsection{Pamięć ROM}
 Pamięć ROM równierz w oparciu o moduł z bibliteki LPM - lpm\_rom. Moduł może być używany zarówneo  jako pamięć synchroniczna i asynchroniczna. W projekcie pamieć zostałą użyta w postaci asynchronicznej. Sterowany jest jedynie dostęp modułu do trójstanowej szyny danych. W momencie, gdy nie następuje odczyt danych, moduł przechodzi w stan wysokiej impedancji, pozostawiajać wolny dostęp do szyny danych.
 W symulacji przedstawionej poniżej~\ref{fig:rom} użytu został następujący plik konfiguracujny zawartosci pamięci:
 
-\begin{lstlisting}[caption=Plik wynikowy dla symulacji~\ref{fig:rom},language=ahdl]
+\begin{lstlisting}[caption=Plik źródłowy dla symulacji~\ref{fig:rom},language=ahdl]
 
 WIDTH = 8;
 DEPTH = 32;
@@ -249,6 +252,8 @@ tabsize=4
 \label{fig:rom}
 \end{figure}
 
+Kod modułu został umieszczony na listingu~\ref{lst_rom}.
+
 \section{Moduł operacji złożonej -- mnożenie Bootha}
 
 Algorytm Bootha jest wykorzystywany do mnożenia dwóch liczb binarnych zapisanych w postaci U2.
@@ -275,6 +280,8 @@ Algorytm polega na sukcesywnym dodawaniu do sumy częściowej P jednej z dwóch 
 
 W projekcie mnożenie zostało zrealizowane jako osobny blok funkcjonalny, do którego podawane są mnożna i mnożnik. Blok ten posiada własny sygnał WAIT oznaczający trwające obliczenia, a po ich zakończeniu wynik jest udostępniany przy pomocy odpowiednich sygnałów. Obie liczby na wejściu muszą być tej samej długości (w projekcie przyjęto n=8, ale łatwo jest to zmienić), wynik natomiast jest dwukrotnie dłuższy (ze względu na architekturę projektowanego mikrokontrolera odczytywane jest tylko 8 młodszych bitów).
 
+Kod modułu został umieszczony na listingu~\ref{lst_mul}.
+
 \section{Moduł wejścia -- klawiatura PS/2}
 
 Moduł odpowiada za komunikację układu z urządzeniami zewnętrznymi za pomocą portu PS2. Transmisja danych przychodzących synchronizowana jest poprzez zewnętrzny zegar (ok. 15 kHz) dostarczany przez urządzenie komunikujące się z układem. Wewnętrzna struktura modułu oparta jest o maszynę stanów taktowana wewnętrznym sygnałem (ok. 20 MHz).  Maszyna stanów bada kolejność wprowadzanych znaków, jeżeli jest poprawna, wprowadzana liczba konwertowana jest na U2. Konwersja odbywa się poprzez sumowanie odpowiednio przemnożonych kolejnych cyfr dziesiętnych wprowadzanej liczby i odpowiednie ustawienie bitu znaku, jeżeli liczba należy do przedziału [-128; 127]
@@ -293,8 +300,10 @@ Moduł odpowiada za komunikację układu z urządzeniami zewnętrznymi za pomoc�
 \label{fig:ps2_sim}
 \end{figure}
 
+Kod modułu został umieszczony na listingu~\ref{lst_ps2}.
+
 \section{Moduł wyjścia -- drukarka LPT}
-Moduł odpowiada za komunikację z urządzeniami zewnętrznymi przy użyciu portu LPT. Moduł oparty jest o maszynę stanów taktowaną wewnętrznym zegarem (ok. 20 MHz). Poszczególne stany automatu odpowiadają etapom transmisji danych poprzez łącze równoległe. Moduł korzysta z opisanego poniżej modułu służącego do konwersji liczb z postaci U2 do BCD. Transmisja danych opiera się o wystawianie i utrzymywanie sygnałów sterujących zgodnie wymogami czasowymi transmisjiu~\ref{fig:lpt} , a także badanie stanu linii sterujących wejściowych. Moduł dokonuje także zamiany poszczególnych znaków liczby w postaci BCD na ich odpowiedniki w kodzie ASCII, którą są następnie wysyłane do urządzenia zewnętrznego (np. drukarki).
+Moduł odpowiada za komunikację z urządzeniami zewnętrznymi przy użyciu portu LPT. Moduł oparty jest o maszynę stanów taktowaną wewnętrznym zegarem (ok. 20 MHz). Poszczególne stany automatu odpowiadają etapom transmisji danych poprzez łącze równoległe. Moduł korzysta z opisanego poniżej modułu służącego do konwersji liczb z postaci U2 do BCD. Transmisja danych opiera się o wystawianie i utrzymywanie sygnałów sterujących zgodnie wymogami czasowymi transmisji (rys.~\ref{fig:lpt}), a także badanie stanu linii sterujących wejściowych. Moduł dokonuje także zamiany poszczególnych znaków liczby w postaci BCD na ich odpowiedniki w kodzie ASCII, które są następnie wysyłane do urządzenia zewnętrznego (drukarki zgodnej ze standardem Centronix).
 
 \begin{figure}[h]
 \centering
@@ -306,23 +315,31 @@ Moduł odpowiada za komunikację z urządzeniami zewnętrznymi przy użyciu port
 \begin{figure}[h]
 \centering
 \includegraphics[width=11cm]{./pict/LPT_sim.png}
-\caption{Przebiegi czasowe na liniach modułu LPT.}
+\caption{Wynik symulacji modułu LPT. Na wejście (LPT\_DATA) podana została liczba 123. Widać 6 cykli zapisu do drukarki (inicjowane zmianą sygnału LPT\_STROBE) oraz oczekiwanie na zakończenie cyklu pracy aż do zdjęcia sygnałów LPT\_WR oraz LPT\_IOREQ.}
 \label{fig:lpt_sim}
 \end{figure}
+
+Kod modułu został umieszczony na listingu~\ref{lst_lpt}.
 
 \subsection{Moduł zamiany liczb U2 na BCD}
 
 Pierwszym krokiem konwersji liczb jest sprawdzenie i zapisanie znaku liczby w kodzie U2 i zamiana jej wartości bezwzględnej na liczbę w postaci NKB. Liczba z postaci NKB do postaci BCD konwertowana jest za pomocą algorytmu Shitf and Add 3 . Ogólna zasada działania algorytmu opiera się na stworzeniu bufora odpowiadającego sumarycznej wielkości znaków wyjściowych (u nasz 10 bit, po 4 bit na dziesiątki i jedności, 2 bity na cyfrę setek) i odpowiednim wsuwaniu z prawej strony liczby binarnej i testowaniu jej wartości. Jeżeli wartość kolumnie odpowiadającej którejś z cyfr liczby dziesiętnej jest większa bądź równa 5 to do tej kolumny dodajemy 3. Po wsunięciu wszystkich bitów konwertowanej liczby algorytm się kończy. W każdej z kolumn otrzymujemy wartość binarnie zapisaną wartość dziesiętną danej cyfry.
 
-\section{Moduł testowy - wyświetlacz siedio segmentowy}
-W czasie testowania stworzonego mikrokontrolera powstał jeszcze jedne dodatkowy moduł testowy. Pozwala on na wyprowadzanie na dwucyfrowy wyświetlacz 7-segmentowy aktualnej zawartości lini danych.
-
 \begin{figure}[h]
 \centering
 \includegraphics[width=11cm]{./pict/BCD_sim.png}
-\caption{Przebiegi czasowe na liniach modułu LPT.}
+\caption{Symulacja działania modułu zamiany liczb na postać BCD.}
 \label{fig:lBCD_sim}
 \end{figure}
+
+Kod modułu został umieszczony na listingu~\ref{lst_bcd}.
+
+\section{Moduł testowy -- wyprowadzanie danych w postaci binarnej}
+W czasie testowania stworzonego mikrokontrolera powstał jeszcze jeden dodatkowy moduł testowy. Pozwala on na wyprowadzanie 8-bitowej danej w postaci binarnej na zewnątrz. Do modułu tego może zostać podłączony dowolny moduł (systemu SML3) potrafiący wyświetlić takie dane, np. wyświetlacz 7-segmentowy (dane zostaną pokazane w formie dwóch cyfr szesnastkowych) bądź zestaw diod LED (wtedy każda dioda będzie odpowiadała stanowi jednego z bitów).
+
+Moduł okazał się potrzebny w sytuacji, kiedy niezbędne było podglądanie i "zamrażanie" stanu jednej ze zmiennych w układzie, która jedynie przez krótki czas przechowywała wynik obliczeń, a po za nim zawsze się zerowała (a więc proste jej wyprowadzenie na zewątrz nie dawało zadowalających rezultatów).
+
+Kod modułu został umieszczony na listingu~\ref{lst_seg}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Opis assemblera
@@ -514,13 +531,14 @@ tabsize=4
 \chapter{Kody źródłowe}
 
 \section{Mikrokontroler}
-\lstinputlisting[language=vhdl,label=lst_ram,caption=cpu.vhd]{../HDL/cpu.vhd}
+\lstinputlisting[language=vhdl,label=lst_cpu,caption=cpu.vhd]{../HDL/cpu.vhd}
 \lstinputlisting[language=vhdl,label=lst_ram,caption=ram.vhd]{../HDL/ram.vhd}
-\lstinputlisting[language=vhdl,label=lst_ram,caption=rom.vhd]{../HDL/rom.vhd}
-\lstinputlisting[language=vhdl,label=lst_ram,caption=booth\_multiply.vhd]{../HDL/booth_multiply.vhd}
-\lstinputlisting[language=ahdl,label=lst_ram,caption=input\_ps2.tdf]{../HDL/input_ps2.tdf}
-\lstinputlisting[language=ahdl,label=lst_ram,caption=output\_lpt.tdf]{../HDL/output_lpt.tdf}
-\lstinputlisting[language=ahdl,label=lst_ram,caption=u2tobcd.tdf]{../HDL/u2tobcd.tdf}
+\lstinputlisting[language=vhdl,label=lst_rom,caption=rom.vhd]{../HDL/rom.vhd}
+\lstinputlisting[language=vhdl,label=lst_mul,caption=booth\_multiply.vhd]{../HDL/booth_multiply.vhd}
+\lstinputlisting[language=ahdl,label=lst_ps2,caption=input\_ps2.tdf]{../HDL/input_ps2.tdf}
+\lstinputlisting[language=ahdl,label=lst_lpt,caption=output\_lpt.tdf]{../HDL/output_lpt.tdf}
+\lstinputlisting[language=ahdl,label=lst_bcd,caption=u2tobcd.tdf]{../HDL/u2tobcd.tdf}
+\lstinputlisting[language=vhdl,label=lst_seg,caption=seg.vhd]{../HDL/seg.vhd}
 
 \section{Assembler}
 \lstinputlisting[language=c++,label=lst_asm,caption=asm.cpp]{../ASM/asm.cpp}
