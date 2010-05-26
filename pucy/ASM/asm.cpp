@@ -20,23 +20,28 @@ const char SWITCH_CHAR = '-'; // lub '/'
 const CommandLine ParseCommandLine(int argc, const char* argv[])
 {
     CommandLine cl;
-    for (int i = 1; i <argc; )
-        if (*(argv[i]) == SWITCH_CHAR)
-        {
+	
+    for (int i = 1; i < argc; )
+	
+        if (*(argv[i]) == SWITCH_CHAR) {
             std::vector<std::string> p;
-            p.reserve (argc - i);
-
-            int j;
-            for (j = i + 1;
-                j <argc && (*(argv[j]) != SWITCH_CHAR || strstr(argv[j], " "));
-                ++j)
-                p.push_back (argv[j]);
-
+			
+			int j = i+1;
+			if (j < argc) {
+				if ( *(argv[j]) != SWITCH_CHAR ) {
+					p.push_back(argv[j]);
+					j = 2;
+				} else
+					j = 1;
+			}
+			
             cl.insert (std::make_pair(argv[i] + 1, p));
-            i = j;
-        }
-        else
-            ++i;
+			i = i + j;
+        } else {
+			cl[""].push_back(argv[i]);
+			i++;
+		}
+			
     return cl;
 }
 
@@ -111,8 +116,6 @@ struct Instruction {
 	std::string opcode;
 	// mnemonic
 	std::string mnemo;
-	// length in bytes
-	int length;
 	// instruction type
 	int type;
 };
@@ -270,7 +273,7 @@ void loadLanguageDesc(const char * fname = NULL) {
 	f >> cnt;
 
 	for (int i = 0; i < cnt; ++i) {
-		f >> ins.opcode >> ins.mnemo >> ins.length >> ins.type;
+		f >> ins.opcode >> ins.mnemo >> ins.type;
 		lang[ins.mnemo] = ins;
 	}
 
@@ -465,9 +468,22 @@ std::vector<std::string> assemblyLine(std::vector<std::string> tokens) {
 }
 
 /*
+ * Assembly options
+ */
+struct AssemblyOptions {
+	bool show_comments;
+	bool show_instructions;
+	
+	AssemblyOptions() {
+		show_comments = true;
+		show_instructions = true;
+	}
+};
+
+/*
  * Assembly given file.
  */
-void assembly(const char * fname) {
+void assembly(ofstream & of, const AssemblyOptions & opt, const char * fname) {
 	std::ifstream f(fname);
 	std::string line;
 	int cnt = 0;
@@ -491,12 +507,12 @@ void assembly(const char * fname) {
 
 			if (line.length() < 1) {
 				if (first) {
-					std::cout << "WIDTH = 8;\n"
-								 "DEPTH = 32;\n"
-								 "ADDRESS_RADIX = DEC;\n"
-								 "DATA_RADIX = BIN;\n"
-								 "\n"
-								 "CONTENT BEGIN\n";
+					of << "WIDTH = 8;\n"
+							 "DEPTH = 256;\n"
+							 "ADDRESS_RADIX = DEC;\n"
+							 "DATA_RADIX = BIN;\n"
+							 "\n"
+							 "CONTENT BEGIN\n";
 
 					first = false;
 				}
@@ -507,17 +523,17 @@ void assembly(const char * fname) {
 			if (line[0] == ';') {
 				line[0] = '-';
 				line = "-" + line;
-				std::cout << line << std::endl;
+				if (opt.show_comments) of << line << std::endl;
 				continue;
 			}
 
 			if (first) {
-				std::cout << "WIDTH = 8;\n"
-							 "DEPTH = 32;\n"
-							 "ADDRESS_RADIX = DEC;\n"
-							 "DATA_RADIX = BIN;\n"
-							 "\n"
-							 "CONTENT BEGIN\n";
+				of << "WIDTH = 8;\n"
+						 "DEPTH = 256;\n"
+						 "ADDRESS_RADIX = DEC;\n"
+						 "DATA_RADIX = BIN;\n"
+						 "\n"
+						 "CONTENT BEGIN\n";
 
 				first = false;
 			}
@@ -526,7 +542,7 @@ void assembly(const char * fname) {
             if (line[line.length()-1] == ':') {
                 std::string label = strip(line.substr(0, line.length()-1));
                 cout << "-- New label: " << label << " at " << wrd << "\n";
-                std::cout << "-- " << cnt << ": " << line << "\n";
+                of << "-- " << cnt << ": " << line << "\n";
                 labels[label] = wrd;
                 continue;
             }
@@ -536,16 +552,16 @@ void assembly(const char * fname) {
 				tokens.push_back(s.GetToken());
 			}
 			if (tokens.size()) {
-				std::cout << "-- " << cnt << ": " << line << "\n";
+				if (opt.show_instructions) of << "-- " << cnt << ": " << line << "\n";
 				codes = assemblyLine(tokens);
 				for (size_t i = 0; i < codes.size(); ++i) {
-					std::cout << "\t" << wrd << " :\t" << codes[i] << ";\n";
+					of << "\t" << wrd << " :\t" << codes[i] << ";\n";
 					wrd++;
 				}
 			}
 		}
 
-		std::cout << "END;\n";
+		of << "END;\n";
 
 	}
     catch (string s) {
@@ -559,25 +575,61 @@ void assembly(const char * fname) {
     }
 }
 
-int main(int argc, char * argv[]) {
-    if (argc < 2) {
-	    std::cout << "Usage: " << argv[0] << " file\n";
+int main(int argc, const char * argv[]) {
+	CommandLine cl = ParseCommandLine(argc, argv);
+	std::string ofn;
+	std::ofstream of;
+	AssemblyOptions opt;
+	
+	if (cl.count("-help")) {
+		std::cout << "Usage: asm [options] file\n"
+			"Options:\n"
+			"  --help               Show this info\n"
+			"  -o filename          Specify output file name\n"
+			"  -hc                  Don't put comments into output file\n"
+			"  -hi                  Don't put source lines into output file\n"
+			;
+		return 0;
+	}
+	
+	if (cl.count("hc")) {
+		opt.show_comments = false;
+	}
+	
+	if (cl.count("hi")) {
+		opt.show_instructions = false;
+	}
+	
+    if (cl[""].size() < 1) {
+	    std::cout << argv[0] << ": No input files\n";
         return 0;
     }
 
-    try {
-    	loadLanguageDesc();
-		assembly(argv[1]);
-    }
-    catch (string s) {
-    	std::cout << "Error: " << s << std::endl;
-    }
-    catch (const char * s) {
-    	std::cout << "Error: " << s << std::endl;
-    }
-    catch (...) {
-		std::cout << "Unknown error\n";
-    }
+	if (cl["o"].size() < 1) {
+		std::cout << "No output file specified. Writing to none.mif\n";
+		ofn = "none.mif";
+	} else
+		ofn = cl["o"][0];
+		
+	of.open(ofn.c_str());
+	
+	for (size_t i = 0; i < cl[""].size(); ++i) {	
+		std::string & fn = cl[""][i];
+		std::cout << "Assembling: " << fn << "\n";
+		try {
+			loadLanguageDesc();
+			assembly(of, opt, fn.c_str());
+		}
+		catch (string s) {
+			std::cout << "Error: " << s << std::endl;
+		}
+		catch (const char * s) {
+			std::cout << "Error: " << s << std::endl;
+		}
+		catch (...) {
+			std::cout << "Unknown error\n";
+		}
+	}
 
     return 0;
 }

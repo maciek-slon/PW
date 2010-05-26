@@ -29,9 +29,11 @@
 \frenchspacing
 
 
-%%
-%% AHDL definition
-%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Ustawienia pakietu listing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Definicja słów kluczowych i wyglądu języka AHDL
 \lstdefinelanguage{AHDL}%
   {morekeywords={AND,BEGIN,BIDIR,BITS,BURIED,CARRY,CASCADE,CASE,CLIQUE,CONNECTED_PINS,CONSTANT,
 DEFAULTS,DESIGN,DEVICE,DFF,DFFE,ELSE,ELSIF,END,EXP,FUNCTION,GLOBAL,GND,IF,INCLUDE,INPUT,IS,JKFF,JKFFE,
@@ -43,14 +45,16 @@ SOFT,STATES,SUBDESIGN,TABLE,TFF,TFFE,THEN,TITLE,TRI,VARIABLE,VCC,WHEN,WITH,X,XNO
    morestring=[d]{"}%
   }[keywords,comments,strings]%
 
+% Definicja słów kluczowych i wyglądu assemblera używanego w projekcie
 \lstdefinelanguage{oasm}%
   {morekeywords={STOP, RESET, JMP, JZ, ADD, SUB, LD, OR, AND, LDI, IN, OUT, STORE, MUL},%
    sensitive=f,%
    morecomment=[l];,% nonstandard
   }[keywords,comments]%
 
+% Ustawienia wyglądu listingów (kolory, wcięcia, ...)
 \lstset{
-	language=,	                		% choose the language of the code
+	language=,	                		% choose the default language of the code
 	basicstyle=\footnotesize\ttfamily,       	% the size of the fonts that are used for the code
 	numbers=left,                   		% where to put the line-numbers
 	numberstyle=\tiny,      			% the size of the fonts that are used for the line-numbers
@@ -67,6 +71,10 @@ SOFT,STATES,SUBDESIGN,TABLE,TFF,TFFE,THEN,TITLE,TRI,VARIABLE,VCC,WHEN,WITH,X,XNO
 	keywordstyle=\color{blue}\bfseries,
 	commentstyle=\color{gray}\textit,
 }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Początek treści
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
 
@@ -216,7 +224,7 @@ Kod modułu został umieszczony na listingu~\ref{lst_ram}.
 
 \subsection{Pamięć ROM}
 Pamięć ROM równierz w oparciu o moduł z bibliteki LPM - lpm\_rom. Moduł może być używany zarówneo  jako pamięć synchroniczna i asynchroniczna. W projekcie pamieć zostałą użyta w postaci asynchronicznej. Sterowany jest jedynie dostęp modułu do trójstanowej szyny danych. W momencie, gdy nie następuje odczyt danych, moduł przechodzi w stan wysokiej impedancji, pozostawiajać wolny dostęp do szyny danych.
-W symulacji przedstawionej poniżej~\ref{fig:rom} użytu został następujący plik konfiguracujny zawartosci pamięci:
+W symulacji~\ref{fig:rom} użyty został następujący plik konfiguracyjny zawartosci pamięci:
 
 \begin{lstlisting}[caption=Plik źródłowy dla symulacji~\ref{fig:rom},language=ahdl]
 
@@ -231,14 +239,6 @@ CONTENT BEGIN
 	1 : 10101010; -- R0 <= 0xAA
 	2 : 01010001;
 	3 : 00000001; -- R1 <= 0x01
-	4 : 00100010;
-	5 : 00000001; -- R2 <= R0 + R1 = 0xAB
-	6 : 00100000;
-	7 : 00100001; -- R0 <= R2 + R1 = 0xAC
-	8 : 00000000; -- STOP
-END;
-
-
 END;
 \end{lstlisting}
 \lstset{
@@ -258,27 +258,27 @@ Kod modułu został umieszczony na listingu~\ref{lst_rom}.
 
 Algorytm Bootha jest wykorzystywany do mnożenia dwóch liczb binarnych zapisanych w postaci U2.
 
-Algorytm polega na sukcesywnym dodawaniu do sumy częściowej P jednej z dwóch predefiniowanych wartości -- A bądź S. Oznaczmy przez m i r mnożną i mnożnik naszego działania, a przez n ich ilość bitów.
+Algorytm polega na sukcesywnym dodawaniu do sumy częściowej \texttt{P} jednej z dwóch predefiniowanych wartości -- \texttt{A} bądź \texttt{S}. Oznaczmy przez \texttt{m} i \texttt{r} mnożną i mnożnik naszego działania, a przez \texttt{n} ich ilość bitów.
 
 \begin{enumerate}
-  \item Ustalenie początkowych wartości A, S i P (każde z nich powinno być długości 2n+1 bitów)
+  \item Ustalenie początkowych wartości \texttt{A}, \texttt{S} i \texttt{P} (każde z nich powinno być długości \texttt{2n+1} bitów)
   \begin{enumerate}
-    \item Wypełnienie najstarszych n bitów liczby A wartością m, pozostałe bity zerujemy (A = \{m, 0..0\})
-    \item Wypełnienie najstarszych n bitów liczby S wartością -m (w dopełnieniu do 2), pozostałe bity zerujemy (S = \{-m, 0..0\})
-    \item Wypełniamy najstarsze bity P zerami, nastepnie wstawiamy liczbę r, a najmłodszy bit ustawiamy na 0 (P = \{0..0, r, 0\})
+    \item Wypełnienie najstarszych \texttt{n} bitów liczby \texttt{A} wartością \texttt{m}, pozostałe bity zerujemy (\texttt{A = \{m, 0..0\}})
+    \item Wypełnienie najstarszych \texttt{n} bitów liczby \texttt{S} wartością \texttt{-m} (w dopełnieniu do 2), pozostałe bity zerujemy (\texttt{S = \{-m, 0..0\}})
+    \item Wypełniamy najstarsze bity \texttt{P} zerami, nastepnie wstawiamy liczbę \texttt{r}, a najmłodszy bit ustawiamy na 0 (\texttt{P = \{0..0, r, 0\}})
   \end{enumerate}
   \item Jeśli dwa najmłodsze bity sumy częściowej P wynoszą:
   \begin{enumerate}
-    \item 01: P = P + A
-    \item 10: P = P + S
-    \item 00 lub 11: P pozostaje bez zmian
+    \item 01: \texttt{P = P + A}
+    \item 10: \texttt{P = P + S}
+    \item 00 lub 11: \texttt{P} pozostaje bez zmian
   \end{enumerate}
-  \item Przesunięcie arytmetyczne P o jeden bit w prawo
+  \item Przesunięcie arytmetyczne \texttt{P} o jeden bit w prawo
   \item Powtórzenie kroków od 2 i 3 w sumie n razy
-  \item Wynikiem mnożenia jest P po usunięciu najmłodszego bitu (przesunięciu bitowym w prawo)
+  \item Wynikiem mnożenia jest \texttt{P} po usunięciu najmłodszego bitu (przesunięciu bitowym w prawo)
 \end{enumerate}
 
-W projekcie mnożenie zostało zrealizowane jako osobny blok funkcjonalny, do którego podawane są mnożna i mnożnik. Blok ten posiada własny sygnał WAIT oznaczający trwające obliczenia, a po ich zakończeniu wynik jest udostępniany przy pomocy odpowiednich sygnałów. Obie liczby na wejściu muszą być tej samej długości (w projekcie przyjęto n=8, ale łatwo jest to zmienić), wynik natomiast jest dwukrotnie dłuższy (ze względu na architekturę projektowanego mikrokontrolera odczytywane jest tylko 8 młodszych bitów).
+W projekcie mnożenie zostało zrealizowane jako osobny blok funkcjonalny, do którego podawane są mnożna i mnożnik. Blok ten posiada własny sygnał WAIT oznaczający trwające obliczenia, a po ich zakończeniu wynik jest udostępniany przy pomocy odpowiednich sygnałów. Obie liczby na wejściu muszą być tej samej długości (w projekcie przyjęto \texttt{n=8}, ale łatwo jest to zmienić), wynik natomiast jest dwukrotnie dłuższy (ze względu na architekturę projektowanego mikrokontrolera odczytywane jest tylko 8 młodszych bitów).
 
 Kod modułu został umieszczony na listingu~\ref{lst_mul}.
 
@@ -295,8 +295,8 @@ Moduł odpowiada za komunikację układu z urządzeniami zewnętrznymi za pomoc�
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=11cm]{./pict/PS2_sim.png}
-\caption{Przebiegi czasowe na liniach modułu PS2.}
+\includegraphics[width=16cm]{./pict/PS2_sim.png}
+\caption{Przebiegi czasowe na liniach modułu PS2 (odczytanie 3 znaków z portu).}
 \label{fig:ps2_sim}
 \end{figure}
 
@@ -314,8 +314,8 @@ Moduł odpowiada za komunikację z urządzeniami zewnętrznymi przy użyciu port
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=11cm]{./pict/LPT_sim.png}
-\caption{Wynik symulacji modułu LPT. Na wejście (LPT\_DATA) podana została liczba 123. Widać 6 cykli zapisu do drukarki (inicjowane zmianą sygnału LPT\_STROBE) oraz oczekiwanie na zakończenie cyklu pracy aż do zdjęcia sygnałów LPT\_WR oraz LPT\_IOREQ.}
+\includegraphics[width=16cm]{./pict/LPT_sim.png}
+\caption{Wynik symulacji modułu LPT. Na wejście (\texttt{LPT\_DATA}) podana została liczba 123. Widać 6 cykli zapisu do drukarki (inicjowane zmianą sygnału \texttt{LPT\_STROBE}) oraz oczekiwanie na zakończenie cyklu pracy aż do zdjęcia sygnałów \texttt{LPT\_WR} oraz \texttt{LPT\_IOREQ}.}
 \label{fig:lpt_sim}
 \end{figure}
 
@@ -327,7 +327,7 @@ Pierwszym krokiem konwersji liczb jest sprawdzenie i zapisanie znaku liczby w ko
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=11cm]{./pict/BCD_sim.png}
+\includegraphics[width=16cm]{./pict/BCD_sim.png}
 \caption{Symulacja działania modułu zamiany liczb na postać BCD.}
 \label{fig:lBCD_sim}
 \end{figure}
@@ -398,14 +398,33 @@ Komentarze dostępne są jedynie w wersji całej linii (linia komentarza powinna
 
 \subsection{Kompilacja}
 
+W celu kompilacji programu napisanego w assemblerze do postaci pliku .mif (wczytywanego przez program Quartus jako zawartość pamięci) należy wydać następującą komendę:
+
+\begin{verbatim}
+asm plik [OPCJE]
+\end{verbatim}
+
+przy czym opcje mogą być następujące:
+
+\begin{description}
+\item[\tt{-o nazwa\_pliku}] \hfill \\
+Określenie nazwy pliku wynikowego (jeśli nie zostanie okrślona domyślnie zapisany zostanie plik \verb|none.mif|)
+\item[\tt{-hc}] \hfill \\
+Usunięcie komentarzy z pliku wynikowego (domyślnie komentarze z kodu źródłowego są przepisywane do pliku wynikowego)
+\item[\tt{-hi}] \hfill \\
+Usunięcie przepisywania instrukcji z pliku źródłowego do pliku wynikowego (domyślnie instrukcje umieszczane są w komentarzach przed wygenerowanym z nich kodem)
+\item[\tt{--help}] \hfill \\
+Wyświetlenie pomocy
+\end{description}
+
 \section{Przykłady}
 
 \label{sec:asmex}
 \subsubsection{Assembler dla procesora z projektu}
 \lstset{
 tabsize=6
-}\begin{lstlisting}[caption=Definicja języka,language=]
-
+}
+\begin{lstlisting}[caption=Definicja języka,language=]
 14
 00000	STOP	0
 00001	RESET	0
