@@ -383,11 +383,11 @@ Trzecia sekcja pliku z definicją języka zawiera zdefiniowane typy instrukcji (
 
 Definicja składni może zawierać jeden bądź wiele elementów składowych, z których kazdy oznacza, jak wynikowo powinna zostać złozona instrukcja, a także jakiego typu parametry są dozwolone. Możliwe wartości do wstawienia w tym miejscu to:
 \begin{description}
-  \item[OPCODE] -- kod instrukcji (mnemonik w kodzie źródłowym, binarny kod operacji w pliku wynikowym)
-  \item[Rd] -- symboliczna nazwa jednego z rejestrów, zamieniana na jego kod w pliku wynikowym
-  \item[IM8] -- liczba całkowita (w postaci dziesiętnej bądź szesnastkowej poprzedzonej '0x'), w pliku wynikowym zapisywana w postaci 8-bitowej
-  \item[IM16] -- jak IM8, tyle że w pliku wynikowym zamieniana na liczbę 16-bitową
-  \item[0] -- w tym miejscu w pliku wynikowym zostanie wstawione jedno 0, nie wpływa na postać instrukcji w kodzie źródłowym. Używane do wyrównywania instrukcji do wielokrotności 8 bitów.
+  \item[\tt{OPCODE}] -- kod instrukcji (mnemonik w kodzie źródłowym, binarny kod operacji w pliku wynikowym)
+  \item[\tt{Rd}] -- symboliczna nazwa jednego z rejestrów, zamieniana na jego kod w pliku wynikowym
+  \item[\tt{IM8}] -- liczba całkowita (w postaci dziesiętnej bądź szesnastkowej poprzedzonej '0x'), w pliku wynikowym zapisywana w postaci 8-bitowej
+  \item[\tt{IM16}] -- jak IM8, tyle że w pliku wynikowym zamieniana na liczbę 16-bitową
+  \item[\tt{0}] -- w tym miejscu w pliku wynikowym zostanie wstawione jedno 0, nie wpływa na postać instrukcji w kodzie źródłowym. Używane do wyrównywania instrukcji do wielokrotności 8 bitów.
 \end{description}
 
 \subsection{Pliki źródłowe}
@@ -462,19 +462,19 @@ Dostępnych jest 14 instrukcji 5 typów, każda z nich ma 5-bitowy kod. Procesor
 \setcounter{enumi}{-1}
   \item instrukcja składa się jedynie z samego kodu operacji, pozostałe zera służą do dopełnienia długości kodu wynikowego do wielokrotności 8 bitów. Instrukcja bezargumentowa.
 
-  Przykład: STOP -- zatrzymanie wykonywania programu
+  Przykład: \texttt{STOP} -- zatrzymanie wykonywania programu
   \item instrukcja posiadająca jeden argument typu całkowitoliczbowego, 8 bitowego. 
 
-  Przykład: JMP 0x20 -- skok bezwarunkowy pod podany adres
+  Przykład: \texttt{JMP 0x20} -- skok bezwarunkowy pod podany adres
   \item instrukcja posiadająca dwa argumenty -- w kolejności symbol rejestru oraz stałą liczbową 8-bitową.
   
-  Przykład: LDI R3, -123 -- załadowanie do rejestru R3 wartości -123
+  Przykład: \texttt{LDI R3, -123} -- załadowanie do rejestru R3 wartości -123
   \item instrukcja posiadająca 3 argumenty, wszystkie będące symbolami rejestrów.
 
-  Przykład: ADD R2, R3, R4 -- dodanie rejestrów R3 i R4, umieszczenie wyniku w rejestrze R2
+  Przykład: \texttt{ADD R2, R3, R4} -- dodanie rejestrów R3 i R4, umieszczenie wyniku w rejestrze R2
   \item instrukcja posiadająca dwa argumenty - symbol rejestru oraz stała liczbową 16-bitową.
 
-  Przykład: STORE R5, 0x1234 -- zapisanie wartości rejestru R5 do pamięci RAM pod adres 0x1234.
+  Przykład: \texttt{STORE R5, 0x1234} -- zapisanie wartości rejestru R5 do pamięci RAM pod adres 0x1234.
 \end{enumerate}
 
 
